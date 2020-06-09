@@ -205,7 +205,7 @@ int tutorialApiCpp()
         // Return
         return 0;
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
         return -1;
     }

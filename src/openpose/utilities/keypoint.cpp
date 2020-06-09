@@ -3,6 +3,8 @@
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/keypoint.hpp>
 
+#include <iostream>
+
 namespace op
 {
     const std::string errorMessage = "The Array<T> is not a RGB image or 3-channel keypoint array. This function"
@@ -173,11 +175,13 @@ namespace op
         Array<double>& keypoints, const double scaleX, const double scaleY, const double offsetX,
         const double offsetY);
 
+    std::vector<std::vector<int>> colorsTracking = {{255,0,0},{0,255,0},{0,0,255},{255,255,0},{0,255,255},{255,0,255},{128,255,0},{0,128,255},{128,0,255},{128,0,0},{0,128,0},{0,0,128},{50,50,0},{50,50,0},{0,50,128},{0,100,128},{100,30,128},{0,50,255},{50,255,128},{100,90,128},{0,90,255},{50,90,128},{255,0,0},{0,255,0},{0,0,255},{255,255,0},{0,255,255},{255,0,255},{128,255,0},{0,128,255},{128,0,255},{128,0,0},{0,128,0},{0,0,128},{50,50,0},{50,50,0},{0,50,128},{0,100,128},{100,30,128},{0,50,255},{50,255,128},{100,90,128},{0,90,255},{50,90,128}};
+
     template <typename T>
     void renderKeypointsCpu(
         Array<T>& frameArray, const Array<T>& keypoints, const std::vector<unsigned int>& pairs,
         const std::vector<T> colors, const T thicknessCircleRatio, const T thicknessLineRatioWRTCircle,
-        const std::vector<T>& poseScales, const T threshold)
+        const std::vector<T>& poseScales, const T threshold, const Array<long long>& poseIds)
     {
         try
         {
@@ -202,17 +206,25 @@ namespace op
                 const auto numberColors = colors.size();
                 const auto numberScales = poseScales.size();
                 const auto thresholdRectangle = T(0.1);
+                // std::cout << thresholdRectangle << std::endl;
                 const auto numberKeypoints = keypoints.getSize(1);
 
                 // Keypoints
                 for (auto person = 0 ; person < keypoints.getSize(0) ; person++)
                 {
+                    int trackid = -1;
+                    if(poseIds.getSize(0))trackid = poseIds.at(person);
                     const auto personRectangle = getKeypointsRectangle(keypoints, person, thresholdRectangle);
                     if (personRectangle.area() > 0)
                     {
                         const auto ratioAreas = fastMin(
                             T(1), fastMax(
                                 personRectangle.width/(T)width, personRectangle.height/(T)height));
+                        // std::cout << personRectangle.width << std::endl;
+                        // std::cout << (T)width << std::endl;
+                        // std::cout << personRectangle.height << std::endl;
+                        // std::cout << (T)height << std::endl;
+                        // std::cout << threshold << std::endl;
                         // Size-dependent variables
                         const auto thicknessRatio = fastMax(
                             positiveIntRound(std::sqrt(area)* thicknessCircleRatio * ratioAreas), 2);
@@ -221,6 +233,12 @@ namespace op
                         const auto thicknessLine = fastMax(
                             1, positiveIntRound(thicknessRatio * thicknessLineRatioWRTCircle));
                         const auto radius = thicknessRatio / 2;
+
+                        cv::Scalar color(0,0,0);
+                        if(trackid >= 0)
+                            color = cv::Scalar(colorsTracking[trackid % colorsTracking.size()][0],
+                                              colorsTracking[trackid % colorsTracking.size()][1],
+                                              colorsTracking[trackid % colorsTracking.size()][2]);
 
                         // Draw lines
                         for (auto pair = 0u ; pair < pairs.size() ; pair+=2)
@@ -232,11 +250,12 @@ namespace op
                                 const auto thicknessLineScaled = positiveIntRound(
                                     thicknessLine * poseScales[pairs[pair+1] % numberScales]);
                                 const auto colorIndex = pairs[pair+1]*3; // Before: colorIndex = pair/2*3;
-                                const cv::Scalar color{
-                                    colors[(colorIndex+2) % numberColors],
-                                    colors[(colorIndex+1) % numberColors],
-                                    colors[colorIndex % numberColors]
-                                };
+                                if(trackid < 0)
+                                    color = cv::Scalar{
+                                        colors[(colorIndex+2) % numberColors],
+                                        colors[(colorIndex+1) % numberColors],
+                                        colors[colorIndex % numberColors]
+                                    };
                                 const cv::Point keypoint1{
                                     positiveIntRound(keypoints[index1]), positiveIntRound(keypoints[index1+1])};
                                 const cv::Point keypoint2{
@@ -278,11 +297,11 @@ namespace op
     template OP_API void renderKeypointsCpu(
         Array<float>& frameArray, const Array<float>& keypoints, const std::vector<unsigned int>& pairs,
         const std::vector<float> colors, const float thicknessCircleRatio, const float thicknessLineRatioWRTCircle,
-        const std::vector<float>& poseScales, const float threshold);
+        const std::vector<float>& poseScales, const float threshold, const Array<long long>&);
     template OP_API void renderKeypointsCpu(
         Array<double>& frameArray, const Array<double>& keypoints, const std::vector<unsigned int>& pairs,
         const std::vector<double> colors, const double thicknessCircleRatio, const double thicknessLineRatioWRTCircle,
-        const std::vector<double>& poseScales, const double threshold);
+        const std::vector<double>& poseScales, const double threshold, const Array<long long>&);
 
     template <typename T>
     Rectangle<T> getKeypointsRectangle(
@@ -310,6 +329,8 @@ namespace op
             T maxX = std::numeric_limits<T>::lowest();
             T minY = minX;
             T maxY = maxX;
+            // std::cout << minX << std::endl;
+            // std::cout << maxX << std::endl;
             for (auto part = firstIndex ; part < lastIndexClean ; part++)
             {
                 const auto score = keypointPtr[3*part + 2];
@@ -328,6 +349,10 @@ namespace op
                     if (minY > y)
                         minY = y;
                 }
+                // else
+                // {
+                //     std::cout << 3*part + 2 << std::endl;
+                // }
             }
             if (maxX >= minX && maxY >= minY)
                 return Rectangle<T>{minX, minY, maxX-minX, maxY-minY};
@@ -434,7 +459,7 @@ namespace op
                     error("Person index out of range.", __LINE__, __FUNCTION__, __FILE__);
                 // Count keypoints
                 auto nonZeroCounter = 0;
-                const auto baseIndex = person * (int)keypoints.getVolume(1,2);
+                const auto baseIndex = person * keypoints.getVolume(1,2);
                 for (auto part = 0 ; part < keypoints.getSize(1) ; part++)
                     if (keypoints[baseIndex + 3*part + 2] >= threshold)
                         nonZeroCounter++;
@@ -486,8 +511,8 @@ namespace op
             // Get total distance
             T totalDistance = 0;
             int nonZeroCounter = 0;
-            const auto baseIndexA = personA * (int)keypointsA.getVolume(1,2);
-            const auto baseIndexB = personB * (int)keypointsB.getVolume(1,2);
+            const auto baseIndexA = personA * keypointsA.getVolume(1,2);
+            const auto baseIndexB = personB * keypointsB.getVolume(1,2);
             for (auto part = 0 ; part < keypointsA.getSize(1) ; part++)
             {
                 if (keypointsA[baseIndexA+3*part+2] >= threshold && keypointsB[baseIndexB+3*part+2] >= threshold)
@@ -551,9 +576,8 @@ namespace op
         const Array<double>& keypoints, const int personA, const int personB, const double threshold);
 
     template <typename T>
-    float getKeypointsRoi(
-        const Array<T>& keypointsA, const int personA, const Array<T>& keypointsB, const int personB,
-        const T threshold)
+    float getKeypointsRoi(const Array<T>& keypointsA, const int personA, const Array<T>& keypointsB, const int personB,
+                          const T threshold)
     {
         try
         {
@@ -567,7 +591,30 @@ namespace op
             // Get ROI
             const auto rectangleA = getKeypointsRectangle(keypointsA, personA, threshold);
             const auto rectangleB = getKeypointsRectangle(keypointsB, personB, threshold);
-            return getKeypointsRoi(rectangleA, rectangleB);
+            const Point<T> pointAIntersection{
+                fastMax(rectangleA.x, rectangleB.x),
+                fastMax(rectangleA.y, rectangleB.y)
+            };
+            const Point<T> pointBIntersection{
+                fastMin(rectangleA.x+rectangleA.width, rectangleB.x+rectangleB.width),
+                fastMin(rectangleA.y+rectangleA.height, rectangleB.y+rectangleB.height)
+            };
+            // Make sure there is overlap
+            if (pointAIntersection.x < pointBIntersection.x && pointAIntersection.y < pointBIntersection.y)
+            {
+                const Rectangle<T> rectangleIntersection{
+                    pointAIntersection.x,
+                    pointAIntersection.y,
+                    pointBIntersection.x-pointAIntersection.x,
+                    pointBIntersection.y-pointAIntersection.y
+                };
+                const auto areaA = rectangleA.area();
+                const auto areaB = rectangleB.area();
+                const auto intersection = rectangleIntersection.area();
+                return float(intersection) / float(areaA + areaB - intersection);
+            }
+            // If non overlap --> Return 0
+            return 0.f;
         }
         catch (const std::exception& e)
         {
@@ -581,67 +628,4 @@ namespace op
     template OP_API float getKeypointsRoi(
         const Array<double>& keypointsA, const int personA, const Array<double>& keypointsB, const int personB,
         const double threshold);
-
-    template <typename T>
-    float getKeypointsRoi(const Rectangle<T>& rectangleA, const Rectangle<T>& rectangleB)
-    {
-        try
-        {
-            // Check if negative values, then normalize it
-            auto rectangleANorm = rectangleA;
-            auto rectangleBNorm = rectangleB;
-            // E.g., [-10,-10,W1,H1] and [-20,-20,W2,H2] should be equivalent to [10,10,W1,H1] and [0,0,W2,H2]
-            const auto biasX = std::min(std::min(T{0}, rectangleA.x), rectangleB.x);
-            if (biasX != 0)
-            {
-                rectangleANorm.x -= biasX;
-                rectangleBNorm.x -= biasX;
-            }
-            const auto biasY = std::min(std::min(T{0}, rectangleA.y), rectangleB.y);
-            if (biasY != 0)
-            {
-                rectangleANorm.y -= biasY;
-                rectangleBNorm.y -= biasY;
-            }
-            // Get ROI
-            const Point<T> pointAIntersection{
-                fastMax(rectangleANorm.x, rectangleBNorm.x),
-                fastMax(rectangleANorm.y, rectangleBNorm.y)
-            };
-            const Point<T> pointBIntersection{
-                fastMin(rectangleANorm.x+rectangleANorm.width, rectangleBNorm.x+rectangleBNorm.width),
-                fastMin(rectangleANorm.y+rectangleANorm.height, rectangleBNorm.y+rectangleBNorm.height)
-            };
-            // Make sure there is overlap
-            if (pointAIntersection.x < pointBIntersection.x && pointAIntersection.y < pointBIntersection.y)
-            {
-                const Rectangle<T> rectangleIntersection{
-                    pointAIntersection.x,
-                    pointAIntersection.y,
-                    pointBIntersection.x-pointAIntersection.x,
-                    pointBIntersection.y-pointAIntersection.y
-                };
-                const auto areaA = rectangleANorm.area();
-                const auto areaB = rectangleBNorm.area();
-                const auto intersection = rectangleIntersection.area();
-                return float(intersection) / float(areaA + areaB - intersection);
-            }
-            // If non overlap --> Return 0
-            else
-                return 0.f;
-        }
-        catch (const std::exception& e)
-        {
-            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return 0.f;
-        }
-    }
-    template OP_API float getKeypointsRoi(
-        const Rectangle<int>& rectangleA, const Rectangle<int>& rectangleB);
-    template OP_API float getKeypointsRoi(
-        const Rectangle<unsigned int>& rectangleA, const Rectangle<unsigned int>& rectangleB);
-    template OP_API float getKeypointsRoi(
-        const Rectangle<float>& rectangleA, const Rectangle<float>& rectangleB);
-    template OP_API float getKeypointsRoi(
-        const Rectangle<double>& rectangleA, const Rectangle<double>& rectangleB);
 }

@@ -121,17 +121,17 @@ namespace op
                     + upImpl->mVideoSaverPath;
                 log("Creating MP4 video out of JPG images by running:\n" + imageToVideoCommand + "\n",
                     op::Priority::High);
-                auto codeAnswerVideo = system(imageToVideoCommand.c_str());
+                auto codeAnswer = system(imageToVideoCommand.c_str());
                 // Remove temporary images
-                if (codeAnswerVideo == 0)
+                if (codeAnswer == 0)
                 {
-                    codeAnswerVideo = system(("rm -rf " + upImpl->mTempImageFolder).c_str());
+                    codeAnswer = system(("rm -rf " + upImpl->mTempImageFolder).c_str());
                     log("Video saved and temporary image folder removed.", op::Priority::High);
                 }
                 // Sanity check
-                if (codeAnswerVideo != 0)
+                if (codeAnswer != 0)
                     log("\nVideo " + upImpl->mVideoSaverPath + " could not be saved (exit code: "
-                        + std::to_string(codeAnswerVideo) + "). Make sure you can manually run the following command"
+                        + std::to_string(codeAnswer) + "). Make sure you can manually run the following command"
                         " (with no errors) from the terminal:\n" + imageToVideoCommand, op::Priority::High);
                 // Video (no sound) --> Video (with sound)
                 if (!upImpl->mAddAudioFromThisVideo.empty())
@@ -140,14 +140,14 @@ namespace op
                     const auto audioCommand = "ffmpeg -y -i " + upImpl->mVideoSaverPath
                         + " -i " + upImpl->mAddAudioFromThisVideo + " -codec copy -shortest " + tempOutput;
                     log("Adding audio to video by running:\n" + audioCommand, op::Priority::High);
-                    auto codeAnswerAudio = system(audioCommand.c_str());
+                    auto codeAnswer = system(audioCommand.c_str());
                     // Move temp output to real output
-                    if (codeAnswerAudio == 0)
-						codeAnswerAudio = system(("mv " + tempOutput + " " + upImpl->mVideoSaverPath).c_str());
+                    if (codeAnswer == 0)
+                        codeAnswer = system(("mv " + tempOutput + " " + upImpl->mVideoSaverPath).c_str());
                     // Sanity check
-                    if (codeAnswerAudio != 0)
+                    if (codeAnswer != 0)
                         log("\nVideo " + upImpl->mVideoSaverPath + " could not be saved with audio (exit code: "
-                            + std::to_string(codeAnswerAudio) + "). Make sure you can manually run the following command"
+                            + std::to_string(codeAnswer) + "). Make sure you can manually run the following command"
                             " (with no errors) from the terminal:\n" + audioCommand, op::Priority::High);
                 }
             }

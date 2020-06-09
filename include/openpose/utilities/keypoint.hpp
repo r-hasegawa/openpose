@@ -24,7 +24,8 @@ namespace op
     void renderKeypointsCpu(
         Array<T>& frameArray, const Array<T>& keypoints, const std::vector<unsigned int>& pairs,
         const std::vector<T> colors, const T thicknessCircleRatio, const T thicknessLineRatioWRTCircle,
-        const std::vector<T>& poseScales, const T threshold);
+        const std::vector<T>& poseScales, const T threshold,
+        const Array<long long>& poseIds = op::Array<long long>(0));
 
     template <typename T>
     Rectangle<T> getKeypointsRectangle(
@@ -70,13 +71,8 @@ namespace op
     float getKeypointsRoi(const Array<T>& keypoints, const int personA, const int personB, const T threshold);
 
     template <typename T>
-    float getKeypointsRoi(
-        const Array<T>& keypointsA, const int personA, const Array<T>& keypointsB, const int personB,
-        const T threshold);
-
-    template <typename T>
-    float getKeypointsRoi(
-        const Rectangle<T>& rectangleA, const Rectangle<T>& rectangleB);
+    float getKeypointsRoi(const Array<T>& keypointsA, const int personA, const Array<T>& keypointsB, const int personB,
+                          const T threshold);
 }
 
 #endif // OPENPOSE_UTILITIES_KEYPOINT_HPP

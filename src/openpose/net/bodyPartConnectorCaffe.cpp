@@ -225,8 +225,8 @@ namespace op
     }
 
     template <typename T>
-    void BodyPartConnectorCaffe<T>::Forward_cpu(
-        const std::vector<ArrayCpuGpu<T>*>& bottom, Array<T>& poseKeypoints, Array<T>& poseScores)
+    void BodyPartConnectorCaffe<T>::Forward_cpu(const std::vector<ArrayCpuGpu<T>*>& bottom, Array<T>& poseKeypoints,
+                                                Array<T>& poseScores)
     {
         try
         {
@@ -235,11 +235,10 @@ namespace op
                 const auto* const heatMapsPtr = heatMapsBlob->cpu_data();                 // ~8.5 ms COCO, ~35ms BODY_135
                 const auto* const peaksPtr = bottom.at(1)->cpu_data();                    // ~0.02ms
                 const auto maxPeaks = mTopSize[1];
-                connectBodyPartsCpu(
-                    poseKeypoints, poseScores, heatMapsPtr, peaksPtr, mPoseModel,
-                    Point<int>{heatMapsBlob->shape(3), heatMapsBlob->shape(2)}, maxPeaks, mInterMinAboveThreshold,
-                    mInterThreshold, mMinSubsetCnt, mMinSubsetScore, mDefaultNmsThreshold, mScaleNetToOutput,
-                    mMaximizePositives);
+                connectBodyPartsCpu(poseKeypoints, poseScores, heatMapsPtr, peaksPtr, mPoseModel,
+                                    Point<int>{heatMapsBlob->shape(3), heatMapsBlob->shape(2)},
+                                    maxPeaks, mInterMinAboveThreshold, mInterThreshold,
+                                    mMinSubsetCnt, mMinSubsetScore, mScaleNetToOutput, mMaximizePositives);
             #else
                 UNUSED(bottom);
                 UNUSED(poseKeypoints);
@@ -253,8 +252,8 @@ namespace op
     }
 
     template <typename T>
-    void BodyPartConnectorCaffe<T>::Forward_ocl(
-        const std::vector<ArrayCpuGpu<T>*>& bottom, Array<T>& poseKeypoints, Array<T>& poseScores)
+    void BodyPartConnectorCaffe<T>::Forward_ocl(const std::vector<ArrayCpuGpu<T>*>& bottom, Array<T>& poseKeypoints,
+                                                Array<T>& poseScores)
     {
         try
         {
@@ -308,12 +307,12 @@ namespace op
                 }
 
                 // Run body part connector
-                connectBodyPartsOcl(
-                    poseKeypoints, poseScores, heatMapsGpuPtr, peaksPtr, mPoseModel,
-                    Point<int>{heatMapsBlob->shape(3), heatMapsBlob->shape(2)}, maxPeaks, mInterMinAboveThreshold,
-                    mInterThreshold, mMinSubsetCnt, mMinSubsetScore, mDefaultNmsThreshold, mScaleNetToOutput,
-                    mMaximizePositives, mFinalOutputCpu, pFinalOutputGpuPtr, pBodyPartPairsGpuPtr, pMapIdxGpuPtr,
-                    peaksGpuPtr, mGpuID);
+                connectBodyPartsOcl(poseKeypoints, poseScores, heatMapsGpuPtr, peaksPtr, mPoseModel,
+                                    Point<int>{heatMapsBlob->shape(3), heatMapsBlob->shape(2)},
+                                    maxPeaks, mInterMinAboveThreshold, mInterThreshold,
+                                    mMinSubsetCnt, mMinSubsetScore, mScaleNetToOutput, mMaximizePositives,
+                                    mFinalOutputCpu, pFinalOutputGpuPtr, pBodyPartPairsGpuPtr, pMapIdxGpuPtr,
+                                    peaksGpuPtr, mGpuID);
             #else
                 UNUSED(bottom);
                 UNUSED(poseKeypoints);
@@ -386,9 +385,9 @@ namespace op
                 connectBodyPartsGpu(
                     poseKeypoints, poseScores, heatMapsGpuPtr, peaksPtr, mPoseModel,
                     Point<int>{heatMapsBlob->shape(3), heatMapsBlob->shape(2)}, maxPeaks, mInterMinAboveThreshold,
-                    mInterThreshold, mMinSubsetCnt, mMinSubsetScore, mDefaultNmsThreshold, mScaleNetToOutput,
-                    mMaximizePositives, mFinalOutputCpu, pFinalOutputGpuPtr, pBodyPartPairsGpuPtr, pMapIdxGpuPtr,
-                    peaksGpuPtr);
+                    mInterThreshold, mMinSubsetCnt, mMinSubsetScore, mScaleNetToOutput, mMaximizePositives,
+                    mFinalOutputCpu, pFinalOutputGpuPtr, pBodyPartPairsGpuPtr, pMapIdxGpuPtr, peaksGpuPtr,
+                    mDefaultNmsThreshold);
             #else
                 UNUSED(bottom);
                 UNUSED(poseKeypoints);

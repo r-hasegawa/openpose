@@ -6,25 +6,6 @@
 
 namespace op
 {
-    int getLastNumberWithErrorMessage(const std::string& imageName, const CocoJsonFormat cocoJsonFormat)
-    {
-        try
-        {
-            return (int)getLastNumber(imageName);
-        }
-        catch (const std::exception& e)
-        {
-            const std::string errorMessage = "`--write_coco_json` is to be used with the original "
-                + std::string(cocoJsonFormat == CocoJsonFormat::Car ? "car" : "COCO")
-                + " dataset images. If you are not"
-                " applying those, OpenPose cannot obtain the ID from their file names. Image name:\n"
-                + imageName + "\n Error details: "
-                + e.what();
-            error(errorMessage, __LINE__, __FUNCTION__, __FILE__);
-            return -1;
-        }
-    }
-
     CocoJsonSaver::CocoJsonSaver(const std::string& filePathToSave, const PoseModel poseModel,
                                  const bool humanReadable, const int cocoJsonVariants,
                                  const CocoJsonFormat cocoJsonFormat, const int cocoJsonVariant) :
@@ -116,7 +97,7 @@ namespace op
                     auto imageId = frameNumber;
                     if (cocoJsonFormat == CocoJsonFormat::Body)
                     {
-                        imageId = getLastNumberWithErrorMessage(imageName, CocoJsonFormat::Body);
+                        imageId = getLastNumber(imageName);
                         // Body
                         if (numberBodyParts == 23)
                             indexesInCocoOrder = std::vector<int>{
@@ -139,7 +120,7 @@ namespace op
                     // Foot
                     else if (cocoJsonFormat == CocoJsonFormat::Foot)
                     {
-                        imageId = getLastNumberWithErrorMessage(imageName, CocoJsonFormat::Foot);
+                        imageId = getLastNumber(imageName);
                         if (numberBodyParts == 25 || numberBodyParts > 60)
                             indexesInCocoOrder = std::vector<int>{19,20,21, 22,23,24};
                         else if (numberBodyParts == 23)
@@ -179,7 +160,7 @@ namespace op
                     // Car
                     else if (cocoJsonFormat == CocoJsonFormat::Car)
                     {
-                        imageId = getLastNumberWithErrorMessage(imageName, CocoJsonFormat::Car);
+                        imageId = getLastNumber(imageName);
                         // Car12
                         if (numberBodyParts == 12)
                             indexesInCocoOrder = std::vector<int>{0,1,2,3, 4,5,6,7, 8, 8,9,10,11, 11};

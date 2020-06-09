@@ -55,13 +55,9 @@ We add links to some community-based work based on OpenPose. Note: We do not sup
 
 - Docker Images. For questions and more details, read and post ONLY on [issue thread #347](https://github.com/CMU-Perceptual-Computing-Lab/openpose/issues/347).
     - Dockerfile working also with CUDA 10:
-        - Option 1:
-            - 1. (if necessary) Install the latest version of docker (There are extra steps, but if you're on Ubuntu, the main one is `sudo apt-get install docker-ce`.  Other steps can be found [here](https://phoenixnap.com/kb/how-to-install-docker-on-ubuntu-18-04) )
-            - 2. `docker pull exsidius/openpose`
-            - 3. [more details](https://cloud.docker.com/repository/docker/exsidius/openpose/general) 
-        - [Link 2](https://github.com/esemeniuc/openpose-docker), it claims to also include Python support. Read and post ONLY on [issue thread #1102](https://github.com/CMU-Perceptual-Computing-Lab/openpose/issues/1102).
-        - [Link 3](https://github.com/ExSidius/openpose-docker/blob/master/Dockerfile).
-        - [Link 4](https://cloud.docker.com/repository/docker/exsidius/openpose/general).
+        - [Link 1](https://github.com/esemeniuc/openpose-docker), it claims to also include Python support. Read and post ONLY on [issue thread #1102](https://github.com/CMU-Perceptual-Computing-Lab/openpose/issues/1102).
+        - [Link 2](https://github.com/ExSidius/openpose-docker/blob/master/Dockerfile).
+        - [Link 3](https://cloud.docker.com/repository/docker/exsidius/openpose/general).
     - Dockerfile working only with CUDA 8:
         - [Dockerfile - OpenPose v1.4.0, OpenCV, CUDA 8, CuDNN 5, Python2.7](https://github.com/tlkh/openpose). Read and post ONLY on [issue thread #1102](https://github.com/CMU-Perceptual-Computing-Lab/openpose/issues/1102).
         - [Dockerfile - OpenPose v1.4.0, OpenCV, CUDA 8, CuDNN 6, Python2.7](https://gist.github.com/moiseevigor/11c02c694fc0c22fccd59521793aeaa6).
@@ -324,7 +320,7 @@ If you only have an integrated Intel Graphics card, then it will most probably b
 build/examples/openpose/openpose.bin --num_gpu 1 --num_gpu_start 1
 ```
 
-Also as a side note, if the default installation fails (i.e., the one explained above), install Caffe separately and set `BUILD_CAFFE` to false in the CMake config. Steps:
+Also as a side note, if the default installation fails (i.e., the one explained above), instal Caffe separately and set `BUILD_CAFFE` to false in the CMake config. Steps:
 - Re-create the build folder: `rm -rf build; mkdir build; cd build`.
 - `brew uninstall caffe` to remove the version of Caffe previously installed via cmake.
 - `brew install caffe` to install Caffe separately.
@@ -334,10 +330,9 @@ Also as a side note, if the default installation fails (i.e., the one explained 
     3. `Caffe_LIBS` set to `/usr/local/lib/libcaffe.dylib`.
     4. Run `Configure` and `Generate` from CMake GUI.
 
-In addition, if you face an OpenCV error during compiling time similar to `fatal error: 'opencv2/highgui/highgui.hpp' file not found`, please apply the following patch (this error has been reported in the latest OSX 10.14):
-```
-cd 3rdparty/caffe; git apply ../../scripts/osx/mac_opencl_patch.txt
-```
+You may also have to apply the following patch if you have the latest OSX 10.14. It can be done as follows:
+
+`cd 3rdparty/caffe; git apply ../../scripts/osx/mac_opencl_patch.txt`
 
 
 #### 3D Reconstruction Module

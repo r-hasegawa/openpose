@@ -165,7 +165,7 @@ int tutorialAddModule1()
         // Return successful message
         return 0;
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
         return -1;
     }

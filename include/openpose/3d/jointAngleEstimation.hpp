@@ -8,6 +8,7 @@
 #ifdef USE_3D_ADAM_MODEL
     #include <adam/totalmodel.h>
 #endif
+#include <opencv2/core/core.hpp>
 #include <openpose/core/common.hpp>
 
 namespace op
