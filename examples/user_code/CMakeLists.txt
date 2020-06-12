@@ -1,6 +1,6 @@
 set(USER_CODE_FILES
-    usercode.cpp
-    usercode_nodisplay.cpp)
+    usercode_nodisplay.cpp
+    test.cpp)
 
 foreach(USER_CODE_FILE ${USER_CODE_FILES})
 
