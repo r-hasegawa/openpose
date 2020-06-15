@@ -389,13 +389,13 @@ int openPoseDemo()
         	std::cout << M << std::endl;
 
 		// Define the codec and create VideoWriter object
-		int fourcc = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');
+		int fourcc = cv::VideoWriter::fourcc('H', 'E', 'V', 'C');
 		cv::VideoWriter writer1, writer2;
 		int fps = 30;
 		std::string outname = FLAGS_video.substr(1+FLAGS_video.find_last_of("/"), FLAGS_video.find_last_of(".")-1-FLAGS_video.find_last_of("/"));
 		// std::cout << outname << std::endl;
-		writer1.open("/data/output/" + outname + "output1.avi", fourcc, fps, cv::Size(frame.cols, frame.rows));
-		writer2.open("/data/output/" + outname + "output2.avi", fourcc, fps, cv::Size(field_x, field_y));
+		writer1.open("/data/output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(frame.cols, frame.rows));
+		writer2.open("/data/output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
 
         op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
