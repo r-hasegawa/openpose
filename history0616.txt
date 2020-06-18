@@ -1,0 +1,205 @@
+    1  sudo apt-get update
+    2  sudo apt install vim
+    3  sudo apt-get upgrade
+    4  sudo apt install vim
+    5  sudo apt-get install -y vim csh flex gfortran libgfortran3 g++                  cmake xorg-dev patch zlib1g-dev libbz2-dev                  libboost-all-dev openssh-server libcairo2                  libcairo2-dev libeigen3-dev lsb-core                  lsb-base net-tools network-manager                  git-core git-gui git-doc xclip gdebi-core libffi-dev                  make build-essential libssl-dev zlib1g-dev libbz2-dev                  libreadline-dev libsqlite3-dev wget curl llvm                  libncurses5-dev libncursesw5-dev                  xz-utils tk-dev libffi-dev liblzma-dev python-openssl
+    6  sudo apt-get install nvidia-driver-440
+    7  sudo reboot
+    8  nvidia-smi
+    9  sudo apt-get install --no-install-recommends         cuda-10-2         libcudnn7=7.6.5.32-1+cuda10.2          libcudnn7-dev=7.6.5.32-1+cuda10.2          libnvinfer6=6.0.1-1+cuda10.2          libnvinfer-dev=6.0.1-1+cuda10.2          libnvinfer-plugin6=6.0.1-1+cuda10.2
+   10  sudo apt-cache search cuda-10*
+   11  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+   12  sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+   13  wget http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb
+   14  sudo dpkg -i cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb
+   15  sudo apt-key add /var/cuda-repo-10-2-local-10.2.89-440.33.01/7fa2af80.pub
+   16  sudo apt-get update
+   17  sudo apt-get -y install cuda
+   18  sudo reboot
+   19  sudo apt-get remove docker docker-engine docker.io containerd runc
+   20  sudo apt autoremove
+   21  sudo apt-get update
+   22  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+   23  sudo apt-key fingerprint 0EBFCD88
+   24  sudo add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   25    100     $(lsb_release -cs) \
+   26  sudo add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   27  $(lsb_release -cs) \
+   28  stable"
+   29  sudo apt-get update
+   30  sudo apt-get install docker-ce docker-ce-cli containerd.io
+   31  apt-cache madison docker-ce
+   32  sudo apt install -y docker-ce
+   33  docker ps
+   34  sudo docker ps
+   35  sudo docker run hello-world
+   36  sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+   37  sudo systemctl restart docker
+   38  docker run --gpus all --rm nvidia/cuda nvidia-smi
+   39  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   40  docker version
+   41  nvidia-smi
+   42  nvcc -V
+   43  export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}
+   44  export PATH=/usr/local/cuda-10.2/bin${PATH:+:${PATH}}
+   45  export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+   46  export CUDA_HOME=/usr/local/cuda
+   47  nvcc -V
+   48  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   49  sudo docker run --gpus 0 --rm nvidia/cuda nvidia-smi
+   50  sudo systemctl restart docker
+   51  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   52  sudo apt-get install -y nvidia-container-toolkit
+   53  export compose='1.21.1'
+   54  sudo curl -L https://github.com/docker/compose/releases/download/${compose}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+   55  sudo chmod 0755 /usr/local/bin/docker-compose
+   56  docker-compose -v
+   57  sudo gpasswd -a r-hasegawa docker
+   58  docker run --gpus all --rm nvidia/cuda nvidia-smi
+   59  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   60  sudo reboot
+   61  pwd
+   62  mkdir workplace
+   63  ls
+   64  cd workplace/
+   65  cd ..
+   66  mkdir data
+   67  cd workplace/
+   68  git clone https://github.com/r-hasegawa/openpose.git
+   69  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   70  nvidia-smi
+   71  sudo vim nvidia-container-runtime-script.sh
+   72  sh nvidia-container-runtime-script.sh
+   73  sudo apt-get install nvidia-container-runtime
+   74  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   75  sh nvidia-container-runtime-script.sh
+   76  sudo apt-get install nvidia-container-runtime
+   77  docker run -it --rm --gpus all ubuntu nvidia-smi
+   78  sudo apt-get remove docker docker-engine docker.io containerd runc
+   79  sudo apt-get update
+   80  sudo apt-get install     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common
+   81  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+   82  sudo apt-key fingerprint 0EBFCD88
+   83  sudo add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   84     $(lsb_release -cs) \
+   85     stable"
+   86  sudo apt-get update
+   87  sudo apt-get install docker-ce docker-ce-cli containerd.io
+   88  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   89  sudo apt-get remove docker docker-engine docker.io containerd runc
+   90  sudo apt-get install docker-ce docker-ce-cli containerd.io
+   91  sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+   92  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+   93  docker run --gpus all --rm nvidia/cuda nvidia-smi
+   94  sudo apt-get pursudo apt-get remove docker docker-engine docker.io containerd runc
+   95  sudo apt-get remove docker docker-engine docker.io containerd runc
+   96  docker version
+   97  distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+   98  curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+   99  curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+  100  sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+  101  sudo systemctl restart docker
+  102  sudo docker run --gpus all --rm nvidia/cuda nvidia-smi
+  103  docker pull broderickhigby/openpose-staf:latest
+  104  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority -v /media/r-hsgw/data/Openpose:/data --device /dev/video0:/dev/video0  openpose-staf:latest /bin/bash
+  105  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority -v /media/r-hsgw/data/Openpose:/data --device /dev/video0:/dev/video0  broderickigby/openpose-staf:latest /bin/bash
+  106  docker images
+  107  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority -v /media/r-hsgw/data/Openpose:/data --device /dev/video0:/dev/video0  broderickhigby/openpose-staf:latest /bin/bash
+  108  lsusb
+  109  sudo apt install v4l-utils
+  110  v4l2-ctl --list-device
+  111  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority -v /media/r-hsgw/data/Openpose:/data --device /dev/video0:/dev/video0  broderickhigby/openpose-staf:latest /bin/bash
+  112  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  broderickhigby/openpose-staf:latest /bin/bash
+  113  xeyes
+  114  xhost +
+  115  xhost + local:root
+  116  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  broderickhigby/openpose-staf:latest /bin/bash
+  117  sudo fdisk -l
+  118  sudo blkid /dev/sda1
+  119  vim /etc/fstab
+  120  mkfs -t ext4 /dev/sdb1
+  121  mkfs -t ext4 /dev/sda1
+  122  sudo mkfs -t ext4 /dev/sda1
+  123  sudo blkid /dev/sda1
+  124  sudo vim /etc/fstab
+  125  sudo shutdown -r now
+  126  xhost + local:root
+  127  sudo df
+  128  sudo umount /dev/sdb1
+  129  sudo mkdosfs -F32 -nUSB /dev/sdb1
+  130  docker run -it --rm --gpus all -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+  131  xeyes
+  132  exit
+  133  xeyes
+  134  exit
+  135  chmod 775 /home/r-hasegawa/data
+  136  sudo chmod 775 /home/r-hasegawa/data
+  137  sudo chmod 775 /home/r-hasegawa/data/*
+  138  ls -la ダウンロード/
+  139  sudo chmod 775 ダウンロード/0608_cross.MP4 
+  140  ls -la data/
+  141  ls -la data/input/
+  142  sudo mv 0608_cross.MP4 data/input/
+  143  sudo chmod 777 workplace/openpose/examples/user_code/*
+  144  sudo mv ダウンロード/test.jpg workplace/openpose/
+  145  sudo mv test.jpg workplace/openpose/
+  146  ls
+  147  udo mv test.png workplace/openpose/
+  148  sudo mv test.png workplace/openpose/
+  149  cheese
+  150  xhost + local:root
+  151  sudo nailtails
+  152  sudo nautilus
+  153  sudo apt-get install vnc4server
+  154  vncserver :1
+  155  settings set org.gnome.Vino require-encryption false
+  156  gsettings set org.gnome.Vino require-encryption false
+  157  xhost + local:root
+  158  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/staf broderickhigby/openpose-staf:latest /bin/bash
+  159  ssh -V
+  160  sudo systemctl status ssh
+  161  sudo systemctl start ssh
+  162  sudo systemctl enable ssh
+  163  docker run -it --rm --gpus all --name r-hsgw_openpose-staf2 -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/staf broderickhigby/openpose-staf:latest /bin/bash
+  164  docker run -it --gpus all --name r-hsgw_openpose-staf -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/staf broderickhigby/openpose-staf:latest /bin/bash
+  165  docker commit r-hsgw_openpose-staf openpose_staf:r-hasegawa
+  166  docker run -it --gpus all --name r-hsgw_openpose-staf -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose-staf:r-hasegawa /bin/bash
+  167  docker run -it --gpus all --name r-hsgw_openpose-staf -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+  168  docker ps
+  169  docker rm r-hsgw_openpose-staf 
+  170  docker run -it --gpus all --rm -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+  171  docker run -it --gpus all -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+  172  cd workplace/openpose/
+  173  git add .
+  174  sudo git add .
+  175  sudo git commit -m "ver.20200612"
+  176  git config --global use.email "r-hasegawa@ist.osaka-u.ac.jp"
+  177  git config --global use.name "r-hasegawa
+  178  sudo git commit -m "ver.20200612"
+  179  git config --global use.name r-hasegawa
+  180  git config --global use.email r-hasegawa@ist.osaka-u.ac.jp
+  181  sudo git commit -m "ver.20200612"
+  182  sudo git config --global use.email r-hasegawa@ist.osaka-u.ac.jp
+  183  sudo git config --global use.name r-hasegawa
+  184  sudo git commit -m "ver.20200612"
+  185  sudo git config --global user.email r-hasegawa@ist.osaka-u.ac.jp
+  186  sudo git config --global user.name r-hasegawa
+  187  sudo git commit -m "ver.20200612"
+  188  git push origin master
+  189  sudo git push origin master
+  190  ls
+  191  cd subtools/
+  192  python -V
+  193  python3 -V
+  194  python3 fusion_video.py 0608_cross
+  195  pip3 install numpy
+  196  pip install numpy
+  197  sudo apt install python3-pip
+  198  pip3 install numpy
+  199  python3 fusion_video.py 0608_cross
+  200  pip3 install cv2
+  201  pip3 install opencv-python
+  202  python3 fusion_video.py 0608_cross
+  203  python3 fusion_video.py /home/r-hasegawa/data/output/0608_cross
+  204  history
+  205  history --> history0616.txt

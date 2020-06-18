@@ -11,8 +11,10 @@
 // DEFINE_string(image_dir,                "/data/input/0531A4-1_4k.mp4",
 //     "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
 // Display
-DEFINE_bool(no_display, false,
-    "Enable to disable the visual display.");
+// DEFINE_bool(no_display, false,
+//     "Enable to disable the visual display.");
+
+static int DPID = 0;
 
 std::vector<std::string> split(std::string str, char del) {
     int first = 0;
@@ -36,81 +38,244 @@ std::vector<std::string> split(std::string str, char del) {
     return result;
 }
 
+struct DensePoints { // 密な場所
+    std::vector<cv::Point2f> Pts;   // 密な場所の中心座標
+    // int people = 0;    // dense point 内の人数
+    std::vector<int> ids;
+    std::vector<double> t; // 経過時間
+};
+
+struct PotentialHumanPoints { // 人が隠れている可能性がある範囲
+    std::vector<cv::Point2f> Pts;   // 人が隠れている可能性がある範囲の中心
+    std::vector<int> ids;    // 隠れた人のID
+};
+
+int vector_finder(std::vector<int> vec, int number) {
+  auto itr = std::find(vec.begin(), vec.end(), number);
+  size_t index = std::distance( vec.begin(), itr );
+  if (index != vec.size()) { // 発見できたとき
+    return 1;
+  }
+  else { // 発見できなかったとき
+    return 0;
+  }
+}
 
 bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& datumsPtr, 
 	cv::Mat bg, cv::Mat M, cv::Point offset, int area_resize_rate,
-	cv::VideoWriter writer1, cv::VideoWriter writer2, int fnum)
+	cv::VideoWriter writer1, cv::VideoWriter writer2, int fnum,
+    void *data1, void *data2,
+    double t, double t2)
 {
 	// 1.Nose 2.Chest 3.RShoulder 4.RElbow 5.RWrist
 	// 6.LShoulder 7.LElbow 8.LWrist 9.MidHip 10.RHip
 	// 11.RKnee 12.RAnkle 13.LHip 14.LKnee 15.LAnkle
 	// 16. REye 17.LEye 18.REar 19.LEar 20.Neck 21.Head
 	const int key_id = 9;
+
+    DensePoints &dp = *(DensePoints *)data1;
+    PotentialHumanPoints &php = *(PotentialHumanPoints *)data2;
+
     try
     {
         // Example: How to use the pose keypoints
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
-        	cv::Mat disp_image = datumsPtr->at(0)->cvOutputData;
-        	writer1 << disp_image;
-        	if (disp_image.cols > 1500){
-        		cv::resize(disp_image, disp_image, cv::Size(), 0.5, 0.5);
-        	}
-
-
         	auto poseIds = datumsPtr->at(0)->poseIds;
 			auto poseKeypoints = datumsPtr->at(0)->poseKeypoints;
-    		// ワールド座標系へ変換
-    		// cv::Point points[poseKeypoints.getSize(0)];
-    		// cv::Point pos[poseKeypoints.getSize(0)];
-    		cv::Mat bg_copy = bg.clone();
-    		std::vector<cv::Point2f> points(poseKeypoints.getSize(0));
-			std::vector<cv::Point2f> positions(poseKeypoints.getSize(0));
+
+            float d;
+    		
+    		std::vector<cv::Point2f> points(poseKeypoints.getSize(0) + php.Pts.size());
+			std::vector<cv::Point2f> positions(poseKeypoints.getSize(0) + php.Pts.size());
+            std::vector<int> ids(poseIds.getSize(0) + php.Pts.size());
+            // Preprocessing
+            int pos_num = 0;
+            int php_num = 0;
 			for(int i = 0; i < poseKeypoints.getSize(0); i++){
-				const auto id = int (poseIds[i]);
 				const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; //2:nose 5:chest
-				// std::cout << id << std::endl;
-				if (Keypoint < 0.05)
+				if (Keypoint < 0.05){
+                    // std::cout << "Key point 9(MidHip) not detected" << std::endl;
 					continue;
-				points[i] = cv::Point( poseKeypoints[i*21*3+key_id*3-3], poseKeypoints[i*21*3+key_id*3-2] );
+                }
+                // std::cout << pos_num+php_num << std::endl;
+				points[pos_num] = cv::Point2f(float(poseKeypoints[i*21*3+key_id*3-3]), float(poseKeypoints[i*21*3+key_id*3-2]) );
+                ids[pos_num] = poseIds[i];
+                pos_num++;
+                // std::cout << pos_num << std::endl;
 			}
-			if ( poseKeypoints.getSize(0) > 0){ // ワールド座標へ変換
+
+            // ワールド座標系へ変換
+			if ( poseKeypoints.getSize(0) > 0){ 
 				cv::perspectiveTransform(points, positions, M);
 			}
+
+            // // 隠れた人の場所と検出された場所を比較
+            if (php.Pts.size() > 0) {
+                for(int j = 0; j < php.Pts.size(); j++){
+                    if(vector_finder(ids, php.ids[j])){// 追跡できた場合のphpを削除
+                        // std::cout << "ID matched" + php.ids[j] << std::endl;
+                        // printf("%d : ID Matched (Delete)\n", php.ids[j]);
+                        continue;
+                    }
+                    if(php.Pts[j].x/area_resize_rate < -10.0 || php.Pts[j].y/area_resize_rate < -10.0){ // 外側へ消えたと思われるphpを削除
+                        // std::cout << "Escape to External Area" << std::endl;
+                        // printf("%d : Escape to External Area (Delete)\n", php.ids[j]);
+                        continue;
+                    }
+                    bool is_exist_php = true;
+                    for (int k = 0; k < pos_num; k++){ // php範囲内から人が出現した(検出された)場合phpを削除
+                        d  = sqrtf( pow(php.Pts[j].x - positions[k].x, 2) + pow(php.Pts[j].y - positions[k].y, 2) );
+                        if(d/area_resize_rate < 1.5 && vector_finder(php.ids, ids[k])==0){ // 距離が近くてあたらしいIDの場合
+                            // printf("%d -> %d: New Nearest ID  (Delete)\n", php.ids[j], ids[k]);
+                            is_exist_php = false;
+                            break;
+                        }
+                    }
+                    if(is_exist_php){
+                        // printf("%d : Potential Human Detected (New)\n", php.ids[j]);
+                        // std::cout << pos_num+php_num << std::endl;
+                        positions[pos_num+php_num] = php.Pts[j];
+                        ids[pos_num+php_num] = php.ids[j];
+                        php_num++;
+                    }else{
+                        // printf("%d : Near ID Detected (Delete)\n", php.ids[j]);
+                    }
+                }
+            }
+            int Endpoint = pos_num+php_num;      
+
 			// 描画処理
-			std::vector<cv::Point> pos(poseKeypoints.getSize(0));
-			for(int i = 0; i < poseKeypoints.getSize(0); i++){
-				// printf(" --> (%f, %f)", positions[i].x, positions[i].y);
-				pos[i] = {int(positions[i].x+offset.x), int(positions[i].y+offset.y)};
-				if(pos[i].x < 0 || pos[i].y < 0){
+            cv::Mat bg_copy = bg.clone();
+            cv::putText(bg_copy, std::to_string(fnum), cv::Point(int(bg_copy.cols)-100,int(bg_copy.rows)-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+            cv::putText(bg_copy, "FPS:" + std::to_string(int(1000.0 / t)), cv::Point(int(bg_copy.cols)-200,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+            int s = int(t2/1000.0);
+            int ms = int(t2/10.0) - s * 100;
+            cv::putText(bg_copy, ("Time:" + std::to_string(s) + "." + std::to_string(ms)), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+
+            std::vector<cv::Point2f> positions2(Endpoint);
+            std::vector<int> ids2(Endpoint);
+			for(int i = 0; i < Endpoint; i++){
+                positions2[i] = positions[i];
+                ids2[i] = ids[i];
+				if(positions2[i].x+offset.x < 0 || positions2[i].y+offset.y < 0){ // 範囲外
 					continue;
 				}
-				cv::circle(bg_copy, pos[i], 3, (0, 0, 255), 3);
-				cv::putText(bg_copy, std::to_string(int(poseIds[i])), cv::Point(int(pos[i].x)+10,int(pos[i].y)+10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,200), 1.5, CV_AA);
-				cv::putText(bg_copy, std::to_string(fnum), cv::Point(int(bg_copy.cols)-100,int(bg_copy.rows)-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+                if(i < pos_num){ // 検出された人
+                    cv::circle(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), area_resize_rate*0.15, cv::Scalar(255, 0, 0), -1); // 直径30cmの円
+                    cv::putText(bg_copy, std::to_string(ids2[i]), cv::Point(int(positions2[i].x+offset.x+10), int(positions2[i].y+offset.y+10)), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,0,0), 1.5, CV_AA);
+                }else{ // 隠れた人
+                    // std::cout << pos[i] << std::endl;
+                    cv::circle(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), area_resize_rate*1.5/2, cv::Scalar(255, 255, 255), 2);
+                    cv::putText(bg_copy, std::to_string(ids2[i]), cv::Point(int(positions2[i].x+offset.x+10), int(positions2[i].y+offset.y+10)), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,255,255), 1.5, CV_AA);
+                }
 			}
-			// std::cout << poseKeypoints.getSize(0)  << std::endl;
-			if (poseKeypoints.getSize(0) * (poseKeypoints.getSize(0)-1) > 0){ // 距離リストを作成
-				// 距離リストのメモリ割り当てでsegmentation fault が発生したのでここのデータ管理構造は要検討
-				// float distance_list[3][(poseKeypoints.getSize(0) * (poseKeypoints.getSize(0)-1)/2)];
-				// std::cout << sizeof(distance_list)/sizeof(*distance_list)  << std::endl;
-				int list_index = 0;
-				for(int i = 0; i < poseKeypoints.getSize(0)-1; i++){
-					for(int j = i+1; j < poseKeypoints.getSize(0); j++){
-						float d = sqrtf( pow(positions[i].x - positions[j].x, 2) + pow(positions[i].y - positions[j].y, 2) );
-						// distance_list[list_index] = {float(poseIds[i]), float(poseIds[j]), d};
-						// std::cout << d << std::endl;
-						// list_index++;
+
+            // std::cout << php.Pts << std::endl;
+            // std::cout << positions2 << std::endl;
+
+			// 距離判定
+            int num_dp = 0;
+            std::vector<cv::Point2f> dps(positions2.size()*(positions2.size()-1));
+			if (positions2.size() >= 2){ // 距離リストを作成
+				for(int i = 0; i < positions2.size()-1; i++){
+					for(int j = i+1; j < positions2.size(); j++){
+						d = sqrtf( pow(positions2[i].x - positions2[j].x, 2) + pow(positions2[i].y - positions2[j].y, 2) );
 						if (d/area_resize_rate < 2.0){
-							cv::line(bg_copy, pos[i], pos[j], cv::Scalar(0,0,255), 2, CV_AA);
+							cv::line(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), 
+                                cv::Point(int(positions2[j].x+offset.x), int(positions2[j].y+offset.y)), cv::Scalar(0,0,255), 2, CV_AA);
+                            dps[num_dp] = (cv::Point2f(float((positions[i].x + positions[j].x)/2),float((positions[i].y + positions[j].y)/2)));
+                            num_dp++;
 							// printf("2m Alert: (%d, %d)\n", int(poseIds[i]), int(poseIds[j]));
 						}
 					}
 				}
 			}
+
+            // 密な場所のトラッキングと経過時間計測 ver1 
+            float maxt;
+            int trackid;
+            std::vector<cv::Point2f> dps2(num_dp);
+            std::vector<int> dpids(num_dp);
+            std::vector<double> time(num_dp);
+            if ( num_dp > 0){
+                std::vector<int> status(dp.Pts.size(),1);
+                for(int i = 0; i < num_dp; i++){
+                    dps2[i] = dps[i];
+                    maxt = 0.0;
+                    trackid = -1;
+                    for(int j = 0; j < dp.Pts.size(); j++){
+                        if (status[j] < 0){
+                            continue;
+                        } 
+                        d = sqrtf( pow(dps2[i].x - dp.Pts[j].x, 2) + pow(dps2[i].y - dp.Pts[j].y, 2) )/area_resize_rate;
+                        if(d < 1.0){
+                            // std::cout << dp.ids[j] << std::endl;
+                            // std::cout << dp.t[j] << std::endl;
+                            if (dp.t[j] > maxt) {
+                                maxt = dp.t[j];
+                                trackid = j;
+                                status[j] = -1;
+                            }
+                        }
+                    }
+                    // 距離2m以内の密な場所　最も長時間なものと結びつける
+                    if (trackid >= 0){ // idの引き継ぎと時間の追加
+                        dpids[i] = dp.ids[trackid];
+                        time[i] = dp.t[trackid] + t;
+                    }else{
+                        // std::cout << t << std::endl;
+                        dpids[i] = DPID;
+                        DPID++;
+                        time[i] = 100; // 初期値0.1秒
+                    }
+
+                    if (time[i]/1000 > 4.0){
+                        cv::circle(bg_copy, cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                            area_resize_rate*2.0/2, cv::Scalar(0, 0, 255), 2);
+                        // cv::putText(bg_copy, std::to_string(time[i]/1000), cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                        //     cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 1.5, CV_AA);
+                        cv::putText(bg_copy, std::to_string(dpids[i]), cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                            cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 1.5, CV_AA);
+                    }else{
+                        cv::circle(bg_copy, cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                            area_resize_rate*2.0/2, cv::Scalar(0, 255, 255), 2);
+                        // cv::putText(bg_copy, std::to_string(time[i]/1000), cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                        //     cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 1.5, CV_AA);
+                        cv::putText(bg_copy, std::to_string(dpids[i]), cv::Point(int(dps2[i].x+offset.x), int(dps2[i].y+offset.y)), 
+                            cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 1.5, CV_AA);
+                    }
+                }
+            }
+
+            //
+            // phpに今回の検出結果を追加
+            php.Pts = positions2;
+            php.ids = ids2;
+            dp.Pts = dps2;
+            dp.ids = dpids;
+            dp.t = time;
+
+            // printf("Past:");
+            // for (int i = 0; i < php.Pts.size(); i++){
+            //     printf("%d, ", php.ids[i]);
+            // }
+            // printf("\n");
+            // printf("Now :");
+            // for (int i = 0; i < ids2.size(); i++){
+            //     printf("%d, ", ids2[i]);
+            // }
+            // printf("\n");
+
+            // 出力
+            cv::Mat disp_image = datumsPtr->at(0)->cvOutputData;
+            writer1 << disp_image;
 			writer2 << bg_copy;
-			// 描画処理
+			// 表示
 			if (true){
+                if (disp_image.cols > 1500){
+                cv::resize(disp_image, disp_image, cv::Size(), 0.5, 0.5);
+                }
 				cv::imshow("OpenPose Tracking", disp_image);
 				cv::imshow("World_Tracking", bg_copy);
 			}
@@ -191,7 +356,7 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (false){
+    if (true){
     	// コールバック関数を登録する
 	    info.winName = "test";
 	    cv::namedWindow(info.winName);
@@ -331,22 +496,6 @@ int openPoseDemo()
 {
     try
     {
-
-
-//         // == ORIGINAL CODE OPENPOSE.CPP == //
-//         // Configure OpenPose
-//         op::log("Configuring OpenPose...", op::Priority::High);
-//         op::Wrapper opWrapper;
-//         configureWrapper(opWrapper);
-
-//         // Start, run, and stop processing - exec() blocks this thread until OpenPose wrapper has finished
-//         op::log("Starting thread(s)...", op::Priority::High);
-//         opWrapper.exec();
-
-//         // Measuring total time
-//         op::printTime(opTimer, "OpenPose demo successfully finished. Total time: ", " seconds.", op::Priority::High);
-//         // == ORIGINAL CODE OPENPOSE.CPP == //
-
         // Configuring OpenPose
         op::log("Configuring OpenPose...", op::Priority::High);
         op::Wrapper opWrapper{op::ThreadManagerMode::Asynchronous};
@@ -361,14 +510,14 @@ int openPoseDemo()
 
         // test用フィールドの作成
         int area_resize_rate = 50;
-		// int mark_area_x = int(area_resize_rate * 8.23);
-		// int mark_area_y = int(area_resize_rate * 5.485);
-		int mark_area_x = int(area_resize_rate * 2.0);
-		int mark_area_y = int(area_resize_rate * 2.0);
+		int mark_area_x = int(area_resize_rate * 8.23);
+		int mark_area_y = int(area_resize_rate * 5.485);
+		// int mark_area_x = int(area_resize_rate * 2.0);
+		// int mark_area_y = int(area_resize_rate * 2.0);
 		int offset_x = int(area_resize_rate * 5.0);
 		int offset_y = int(area_resize_rate * 4.0);
 		int field_x = mark_area_x + 2*offset_x;
-		int field_y = mark_area_y + 2*offset_y;
+		int field_y = mark_area_y + 3*offset_y;
 		cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
     	int cols = bg.cols;
     	int rows = bg.rows;
@@ -395,7 +544,7 @@ int openPoseDemo()
         		cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
         	}
         	cv::Mat M = getM(frame, mark_area_x, mark_area_y);
-        	std::cout << M << std::endl;
+        	// std::cout << M << std::endl;
 
 		// Define the codec and create VideoWriter object
 		int fourcc = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');
@@ -406,11 +555,26 @@ int openPoseDemo()
 		writer1.open("/data/output/" + outname + "_output1.avi", fourcc, fps, cv::Size(frame.cols, frame.rows));
 		writer2.open("/data/output/" + outname + "_output2.avi", fourcc, fps, cv::Size(field_x, field_y));
 
+
+        DensePoints dp;
+        PotentialHumanPoints php;
+
         op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
         int fnum = 0;
+        double FPS;
+        std::chrono::system_clock::time_point Lstms = std::chrono::system_clock::now();
+        std::chrono::system_clock::time_point Lstms2;
+        Lstms2 = Lstms;
         while(cap.read(frame))//無限ループ
         {
+            auto nowms = std::chrono::system_clock::now();
+            auto diff = nowms - Lstms;
+            auto diff2 = nowms - Lstms2;
+            Lstms = nowms;
+            // FPS = 1000.0 / double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+            // std::cout << FPS << std::endl;
+
         	if (frame.cols > 1500){
         		cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
         	}
@@ -427,7 +591,9 @@ int openPoseDemo()
 
                 const auto userWantsToExit = printKeypoints(datumProcessed, 
                 	bg, M, offset, area_resize_rate,
-                	writer1, writer2, fnum);
+                	writer1, writer2, fnum,
+                    (void *)&dp, (void *)&php,
+                    double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count()), double(std::chrono::duration_cast<std::chrono::milliseconds>(diff2).count()));
                 if (userWantsToExit)
                 {
                     op::log("User pressed Esc to exit demo.", op::Priority::High);
