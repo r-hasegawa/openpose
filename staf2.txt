@@ -68,5 +68,7 @@ INPUT=0531A4-1_fhd
 
 docker run -it --rm --gpus all -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
 
+./build/examples/user_code/evaldensity2.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --write_json /data/output_json/$INPUT --video /data/input/$INPUT.MP4
+
 
 

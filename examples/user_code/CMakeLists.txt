@@ -1,7 +1,9 @@
 set(USER_CODE_FILES
     usercode_nodisplay.cpp
     test.cpp
-    density.cpp)
+    density.cpp
+    evaldensity.cpp
+    evaldensity2.cpp)
 
 foreach(USER_CODE_FILE ${USER_CODE_FILES})
 

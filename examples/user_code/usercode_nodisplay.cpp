@@ -383,7 +383,13 @@ int openPoseDemo()
 		cv::Point offset = {offset_x, offset_y};
 		cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(0,0,0), 2, 2);
 
+
         cv::VideoCapture cap(FLAGS_video);
+        if (std::equal(FLAGS_video.begin(), FLAGS_video.end(), "/dev/video0")){
+        	op::log("Use Web Camera", op::Priority::High);
+        	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1920); // カメラ画像の横幅を1280に設定
+			cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080); // カメラ画像の縦幅を720に設定
+        }
         if(!cap.isOpened())//カメラデバイスが正常にオープンしたか確認．
         {
         //読み込みに失敗したときの処理
@@ -391,7 +397,7 @@ int openPoseDemo()
         }
         cv::Mat frame; //取得したフレーム
         if(cap.read(frame))
-        	if (frame.cols > 1500){
+        	if (frame.cols > 2000){
         		cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
         	}
         	cv::Mat M = getM(frame, mark_area_x, mark_area_y);
@@ -405,6 +411,8 @@ int openPoseDemo()
 		// std::cout << outname << std::endl;
 		writer1.open("/data/output/" + outname + "_output1.avi", fourcc, fps, cv::Size(frame.cols, frame.rows));
 		writer2.open("/data/output/" + outname + "_output2.avi", fourcc, fps, cv::Size(field_x, field_y));
+
+		printf("Camera = %d x %d",frame.cols, frame.rows);
 
         op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
