@@ -43,6 +43,20 @@ std::vector<std::string> split(std::string str, char del) {
     return result;
 }
 
+template <typename _Ty>
+std::ostream& operator << (std::ostream& ostr, const std::vector<_Ty>& v) {
+    if (v.empty()) {
+        ostr << "{ }";
+        return ostr;
+    }
+    ostr << "{" << v.front();
+    for (auto itr = ++v.begin(); itr != v.end(); itr++) {
+        ostr << ", " << *itr;
+    }
+    ostr << "}";
+    return ostr;
+}
+
 struct DensePoints { // 密な場所
     std::vector<cv::Point2f> Pts;   // 密な場所の中心座標
     // int people = 0;    // dense point 内の人数
@@ -80,6 +94,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 	// 11.RKnee 12.RAnkle 13.LHip 14.LKnee 15.LAnkle
 	// 16. REye 17.LEye 18.REar 19.LEar 20.Neck 21.Head
 	const int key_id = 9;
+    const int continuance_threshold = 1; // 連続検出フレーム数のしきい値
 
     DensePoints &dp = *(DensePoints *)data1;
     PotentialHumanPoints &php = *(PotentialHumanPoints *)data2;
@@ -97,14 +112,14 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
     		
     		std::vector<cv::Point2f> points(poseKeypoints.getSize(0) + php.Pts.size());
 			std::vector<cv::Point2f> positions(poseKeypoints.getSize(0) + php.Pts.size());
-            std::vector<int> ids(poseIds.getSize(0) + php.Pts.size());
+            std::vector<int> ids(poseIds.getSize(0) + php.Pts.size(), -1);
             std::vector<int> ids_frames(poseIds.getSize(0));
             // Preprocessing
             int pos_num = 0;
             int php_num = 0;
             int continuance_ids = 0;
 			for(int i = 0; i < poseKeypoints.getSize(0); i++){
-				const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; //2:nose 5:chest
+				const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; 
 				if (Keypoint < 0.05
                     || poseKeypoints[i*21*3+(2)*3-1] < 0.05 // 2.Chestが見えるかどうか
                     ){
@@ -115,12 +130,13 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                 if (ids_index>=0){
                     // 連続で現れた場合
                     ids_frames[pos_num] = php.allids_continuance[ids_index]+1;
-                    continuance_ids++;
                 }
                 else{
                     // 初めてあるいは再び現れた場合
                     ids_frames[pos_num] = 1;
                 }
+                if (ids_frames[pos_num] >= continuance_threshold)
+                    continuance_ids++;
                 // std::cout << 19 * disp_image.cols/20 << std::endl;
                 // std::cout << float(poseKeypoints[i*21*3+key_id*3-3]) << std::endl;
                 // if (float(poseKeypoints[i*21*3+key_id*3-3]) < disp_image.cols/20
@@ -133,7 +149,55 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                 // std::cout << pos_num+php_num << std::endl;
 				points[pos_num] = cv::Point2f(float(poseKeypoints[i*21*3+key_id*3-3]), float(poseKeypoints[i*21*3+key_id*3-2]) );
                 ids[pos_num] = poseIds[i];
-                cv::putText(disp_image, std::to_string(poseIds[pos_num]), cv::Point(int(points[pos_num].x + 20),int(points[pos_num].y + 15)), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,255,255), 3, CV_AA);
+                cv::putText(disp_image, std::to_string(ids[pos_num]), cv::Point(int(points[pos_num].x + 20),int(points[pos_num].y + 15)), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,255,255), 3, CV_AA);
+                
+
+
+                // 腰の位置を調整
+                // 足の角度が X°　以上 or 足の比率が長い方の0.75倍
+                float d_leg_left = -1;
+                if(float(poseKeypoints[i*21*3+(10)*3-1]) > 0.05
+                 && float(poseKeypoints[i*21*3+(11)*3-1]) > 0.05 
+                 && float(poseKeypoints[i*21*3+(12)*3-1]) > 0.05){
+                    d_leg_left = std::max(d_leg_left, 2*std::max(
+                        sqrtf( pow(float(poseKeypoints[i*21*3+(11)*3-3]) - float(poseKeypoints[i*21*3+(10)*3-3]), 2) 
+                        + pow(float(poseKeypoints[i*21*3+(11)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2]), 2) ),
+                        sqrtf( pow(float(poseKeypoints[i*21*3+(12)*3-3]) - float(poseKeypoints[i*21*3+(11)*3-3]), 2) 
+                        + pow(float(poseKeypoints[i*21*3+(12)*3-2]) - float(poseKeypoints[i*21*3+(11)*3-2]), 2) ))
+                        - std::abs(float(poseKeypoints[i*21*3+(12)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2])));
+
+                    // std::cout << sqrtf( pow(float(poseKeypoints[i*21*3+(11)*3-3]) - float(poseKeypoints[i*21*3+(10)*3-3]), 2) 
+                    //     + pow(float(poseKeypoints[i*21*3+(11)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2]), 2) ) << std::endl;
+                    // std::cout << std::abs(float(poseKeypoints[i*21*3+(12)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2])) << std::endl;
+                    // std::cout << d_leg << std::endl;
+                    // std::cout << 2*std::max(
+                    //     sqrtf( pow(float(poseKeypoints[i*21*3+(11)*3-3]) - float(poseKeypoints[i*21*3+(10)*3-3]), 2) 
+                    //     + pow(float(poseKeypoints[i*21*3+(11)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2]), 2) ),
+                    //     sqrtf( pow(float(poseKeypoints[i*21*3+(12)*3-3]) - float(poseKeypoints[i*21*3+(11)*3-3]), 2) 
+                    //     + pow(float(poseKeypoints[i*21*3+(12)*3-2]) - float(poseKeypoints[i*21*3+(11)*3-2]), 2) ))
+                    //     - std::abs(float(poseKeypoints[i*21*3+(12)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2])) << std::endl;
+                    // std::cout << d_leg << std::endl;
+                    // float theta = std::atan2((float(poseKeypoints[i*21*3+(11)*3-2]) - float(poseKeypoints[i*21*3+(10)*3-2]))
+                    //     / (float(poseKeypoints[i*21*3+(11)*3-3]) - float(poseKeypoints[i*21*3+(10)*3-3])));
+                }
+                float d_leg_right = -1;
+                if(float(poseKeypoints[i*21*3+(13)*3-1]) > 0.05
+                 && float(poseKeypoints[i*21*3+(14)*3-1]) > 0.05 
+                 && float(poseKeypoints[i*21*3+(15)*3-1]) > 0.05){
+                    d_leg_right = std::max(d_leg_right, 2*std::max(
+                        sqrtf( pow(float(poseKeypoints[i*21*3+(14)*3-3]) - float(poseKeypoints[i*21*3+(13)*3-3]), 2) 
+                        + pow(float(poseKeypoints[i*21*3+(14)*3-2]) - float(poseKeypoints[i*21*3+(13)*3-2]), 2) ),
+                        sqrtf( pow(float(poseKeypoints[i*21*3+(15)*3-3]) - float(poseKeypoints[i*21*3+(14)*3-3]), 2) 
+                        + pow(float(poseKeypoints[i*21*3+(15)*3-2]) - float(poseKeypoints[i*21*3+(14)*3-2]), 2) ))
+                        - std::abs(float(poseKeypoints[i*21*3+(15)*3-2]) - float(poseKeypoints[i*21*3+(13)*3-2])));
+                }
+                // std::cout << d_leg << std::endl;
+                if(d_leg_left > 0 && d_leg_right){
+                    points[pos_num].y = points[pos_num].y - std::min(d_leg_right,d_leg_left);
+                    cv::circle(disp_image, points[pos_num], 6, cv::Scalar(255, 255, 255), -1);
+
+                }
+
                 pos_num++;
                 // std::cout << pos_num << std::endl;
 			}
@@ -144,6 +208,12 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 				cv::perspectiveTransform(points, positions, M);
 			}
 
+            // std::cout << fnum << std::endl;
+            // std::cout << ids << std::endl;
+            // std::cout << php.ids << std::endl;
+
+
+
             // // 隠れた人の場所と検出された場所を比較
             if (php.Pts.size() > 0) {
                 for(int j = 0; j < php.Pts.size(); j++){
@@ -152,21 +222,25 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                         // printf("%d : ID Matched (Delete)\n", php.ids[j]);
                         continue;
                     }
-                    if(
-                        2.0 + (-2.5) * php.Pts[j].x/area_resize_rate >  php.Pts[j].y/area_resize_rate
-                        || php.Pts[j].x/area_resize_rate < -2.0
-                        || php.Pts[j].y/area_resize_rate < -5.5
-                        || php.Pts[j].x/area_resize_rate > (11.885 + 8.0)
-                        || php.Pts[j].y/area_resize_rate > (10.97 + 5.0)
-                        || (php.Pts[j].y/area_resize_rate > 5 && (php.Pts[j].y + 0.58 * php.Pts[j].x)/area_resize_rate > 17.53) // (4.4,15),(20,6)
-                        // || (php.Pts[j].y/area_resize_rate > 10.97 && (php.Pts[j].y - php.Pts[j].x)/area_resize_rate > 10.97)
-                        ){ // 外側へ消えたと思われるphpを削除
-                    //     std::cout << php.Pts[j].x/area_resize_rate << std::endl;
-                    // std::cout << php.Pts[j].y/area_resize_rate << std::endl;
-                        // printf("%d : Escape to External Area (Delete)\n", php.ids[j]);
-                        continue;
-                    }
+                    // if(
+                    //     2.0 + (-2.5) * php.Pts[j].x/area_resize_rate >  php.Pts[j].y/area_resize_rate
+                    //     || php.Pts[j].x/area_resize_rate < -2.0
+                    //     || php.Pts[j].y/area_resize_rate < -5.5
+                    //     || php.Pts[j].x/area_resize_rate > (11.885 + 8.0)
+                    //     || php.Pts[j].y/area_resize_rate > (10.97 + 5.0)
+                    //     || (php.Pts[j].y/area_resize_rate > 5 && (php.Pts[j].y + 0.58 * php.Pts[j].x)/area_resize_rate > 17.53) // (4.4,15),(20,6)
+                    //     // || (php.Pts[j].y/area_resize_rate > 10.97 && (php.Pts[j].y - php.Pts[j].x)/area_resize_rate > 10.97)
+                    //     ){ // 外側へ消えたと思われるphpを削除
+                    // //     std::cout << php.Pts[j].x/area_resize_rate << std::endl;
+                    // // std::cout << php.Pts[j].y/area_resize_rate << std::endl;
+                    //     // printf("%d : Escape to External Area (Delete)\n", php.ids[j]);
+                    //     continue;
+                    // }
+                    // php範囲内から新しく人が出現した(検出された)場合phpを削除
+                    // 消えたIDの近辺に新規IDが出現していないこと
+                    // 消えたIDの近辺に隠れる場所(既存ID)が存在すること
                     bool is_exist_php = true;
+                    bool is_exist_near_php = false;
                     for (int k = 0; k < pos_num; k++){ // php範囲内から人が出現した(検出された)場合phpを削除
                         d  = sqrtf( pow(php.Pts[j].x - positions[k].x, 2) + pow(php.Pts[j].y - positions[k].y, 2) );
                         // if(d/area_resize_rate < 4.0 && vector_finder(php.ids, ids[k])<0){ // 距離が近くてあたらしいID(隠れていたID含む)の場合
@@ -175,8 +249,11 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                             is_exist_php = false;
                             break;
                         }
+                        else if(d/area_resize_rate < 4.0 && vector_finder(php.allids, ids[k])>0){ // 距離が近くてあたらしいIDではない(１個前のフレームで検出した)場合
+                            is_exist_near_php = true;
+                        }
                     }
-                    if(is_exist_php){
+                    if(is_exist_php && is_exist_near_php){ //白丸付近に新規IDが出現せず、かつ、白丸付近に既存ID(オクルージョン対象)がいる場合
                         // printf("%d : Potential Human Detected (New)\n", php.ids[j]);
                         // std::cout << pos_num+php_num << std::endl;
                         positions[pos_num+php_num] = php.Pts[j];
@@ -192,7 +269,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 			// 描画処理
             cv::Mat bg_copy = bg.clone();
             cv::putText(bg_copy, std::to_string(fnum), cv::Point(int(bg_copy.cols)-100,int(bg_copy.rows)-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
-            cv::putText(bg_copy, "FPS:" + std::to_string(int(1000.0 / t)), cv::Point(int(bg_copy.cols)-200,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+            // cv::putText(bg_copy, "FPS:" + std::to_string(int(1000.0 / t)), cv::Point(int(bg_copy.cols)-200,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
             int s = int(t2/1000.0);
             int ms = int(t2/10.0) - s * 100;
             cv::putText(bg_copy, ("Time:" + std::to_string(s) + "." + std::to_string(ms)), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
@@ -216,7 +293,8 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 					continue;
 				}
                 if(i < pos_num){ // 検出された人
-                    if(ids_frames[i] >= 2){
+                    // std::cout << ids_frames[i] << std::endl;
+                    if(ids_frames[i] >= continuance_threshold){ // 連続で検出されたフレーム数が xxx 以上のとき白丸候補
                         ids3[next_php_num] = ids[i];
                         positions3[next_php_num] = positions[i];
                         next_php_num++;
@@ -234,6 +312,15 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                     cv::putText(bg_copy, std::to_string(ids2[i]), cv::Point(int(positions2[i].x+offset.x+10), int(positions2[i].y+offset.y+10)), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(255,255,255), 2, CV_AA);
                 }
 			}
+
+
+            std::cout << ids2 << std::endl;
+            std::cout << ids3 << std::endl;
+
+            cv::Mat bg_copy3;
+            cv::resize(bg_copy, bg_copy3, cv::Size(), 1.5, 1.5);
+
+
 
             // std::cout << php.Pts << std::endl;
             // std::cout << positions2 << std::endl;
@@ -337,7 +424,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             cv::Mat evalimage_copy = evalimage.clone();
             cv::putText(evalimage_copy, "Close Pts:" + std::to_string(int(DPID)), cv::Point(int(bg_copy.cols)-300,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
             cv::putText(evalimage_copy, "(Dense Pts:" + std::to_string(int(DPS)) + ")", cv::Point(int(bg_copy.cols)-300,70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
-            cv::putText(evalimage_copy, ("TOTAL Time:" + std::to_string(int(TOTALDPTIME)) + "." + std::to_string(int(TOTALDPTIME*100)-int(TOTALDPTIME)*100)), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+            // cv::putText(evalimage_copy, ("TOTAL Time:" + std::to_string(int(TOTALDPTIME)) + "." + std::to_string(int(TOTALDPTIME*100)-int(TOTALDPTIME)*100)), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
 
 
 
@@ -364,6 +451,16 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             
             // 出力
             cv::putText(disp_image, std::to_string(fnum), cv::Point(int(disp_image.cols)-200,int(disp_image.rows)-20), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(255,255,255), 2.4, CV_AA);
+            
+            // gousei
+            cv::Mat bg_copy2;
+            cv::resize(bg_copy, bg_copy2, cv::Size(), 1.5, 1.5);
+            cv::Mat roi = disp_image(cv::Rect(0, 0, bg_copy2.cols, bg_copy2.rows));
+            bg_copy2.copyTo(roi);
+
+            cv::Mat roi3 = disp_image(cv::Rect(bg_copy2.cols+20, 0, bg_copy3.cols, bg_copy3.rows));
+            bg_copy3.copyTo(roi3);
+
             writer1 << disp_image;
             writer2 << bg_copy;
 
@@ -418,6 +515,7 @@ void mouseCallback(int event, int x, int y, int flags, void *data)
 
     switch (event) {
     case cv::EVENT_LBUTTONDOWN:
+        std::cout << "info.Pt[" << info.pos << "] = {" << x << "," << y << "};"<< std::endl;
         // 左ボタンを押したとき、4頂点のうち一番近い点を探す
         if (info.pos < 4)
         {
@@ -459,7 +557,7 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (true){
+    if (false){
     	// コールバック関数を登録する
 	    info.winName = "test";
 	    cv::namedWindow(info.winName);
@@ -475,11 +573,29 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
 		// info.Pt[2] = { 1489, 895 };
 		// info.Pt[3] = { 1026, 898 };
 
-       
-        info.Pt[0] = { 1004, 412 };
-        info.Pt[1] = { 1754, 556 };
-        info.Pt[2] = { 1148, 786 };
-        info.Pt[3] = { 365, 530 };
+        // front camera
+        info.Pt[0] = {585,450};
+        info.Pt[1] = {1503,474};
+        info.Pt[2] = {1703,813};
+        info.Pt[3] = {341,783};
+
+
+        // 3m 100cm
+        // info.Pt[0] = { 512, 185 };
+        // info.Pt[1] = { 1355, 177 };
+        // info.Pt[2] = { 2955, 1142 };
+        // info.Pt[3] = { -70, 1173 };
+        // // 4.5m
+        // info.Pt[0] = { 1004, 412 };
+        // info.Pt[1] = { 1754, 556 };
+        // info.Pt[2] = { 1148, 786 };
+        // info.Pt[3] = { 365, 530 };
+        // // 6m 90cm
+        // info.Pt[0] = {523,79};
+        // info.Pt[1] = {1351,81};
+        // info.Pt[2] = {1719,700};
+        // info.Pt[3] = {149,698};
+
     }
     cv::Point2f srcPoint[4] = info.Pt;
 	cv::Point2f dstPoint[4] = { { 0, 0 },{float(resize_rate_x), 0 },{float(resize_rate_x), float(resize_rate_y) },{ 0, float(resize_rate_y) } };
@@ -543,6 +659,18 @@ void draw_tennis_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr,
     }
 }
 
+void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr){
+    cv::Point tl = {offset.x+offset2.x,offset.y+offset2.y};
+    int i;
+    for(i=0;i<=8;i++){
+        cv::line(bg, cv::Point(tl.x+int(arr*i),tl.y), cv::Point(tl.x+int(arr*i),tl.y+int(arr*(4))), cv::Scalar(255,255,255), 2, CV_AA);
+    }
+    for(i=0;i<=4;i++){
+        cv::line(bg, cv::Point(tl.x,tl.y+int(arr*i)), cv::Point(tl.x+int(arr*8),tl.y+int(arr*i)), cv::Scalar(255,255,255), 2, CV_AA);
+    }
+    
+}
+
 
 void configureWrapper(op::Wrapper& opWrapper)
 {
@@ -569,6 +697,7 @@ void configureWrapper(op::Wrapper& opWrapper)
         // netInputSize
         const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "-1x368");
         // const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "-1x368");
+        // -1x368 -> (16:9 = 1920x1080) -> 656x368
         // faceNetInputSize
         const auto faceNetInputSize = op::flagsToPoint(FLAGS_face_net_resolution, "368x368 (multiples of 16)");
         // handNetInputSize
@@ -672,13 +801,13 @@ int openPoseDemo()
 
         // test用フィールドの作成
         int area_resize_rate = 30;
-		int mark_area_x = int(area_resize_rate * 5.485);
-		int mark_area_y = int(area_resize_rate * 8.23);
+		int mark_area_x = int(area_resize_rate * 8);
+		int mark_area_y = int(area_resize_rate * 4);
 		// int mark_area_x = int(area_resize_rate * 2.0);
 		// int mark_area_y = int(area_resize_rate * 2.0);
-		int offset_x = int(area_resize_rate * 8.0);
-		int offset_y = int(area_resize_rate * 3.0);
-		int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 1.0);
+		int offset_x = int(area_resize_rate * 1.0);
+		int offset_y = int(area_resize_rate * 2.0);
+		int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
 		int field_y = mark_area_y + 2*offset_y;
 		cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
     	int cols = bg.cols;
@@ -688,12 +817,16 @@ int openPoseDemo()
             bg.at<cv::Vec3b>(j, i)[0] = 68; //青
             bg.at<cv::Vec3b>(j, i)[1] = 153; //緑
             bg.at<cv::Vec3b>(j, i)[2] = 0; //赤
+            // bg.at<cv::Vec3b>(j, i)[0] = 161; //青
+            // bg.at<cv::Vec3b>(j, i)[1] = 215; //緑
+            // bg.at<cv::Vec3b>(j, i)[2] = 252; //赤
 	        }
 	    }
 		// cv::line(bg, cv::Point(offset_x, offset_y), cv::Point(x, h-1), (255, 0, 0));
 		cv::Point offset = {offset_x, offset_y};
-        draw_tennis_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(1.37))), area_resize_rate, true); // 背景画像　オフセット　オフセット2 resize 縦向き
-		// cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,0), 2, 2);
+        // draw_tennis_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, false); // 背景画像　オフセット　オフセット2 resize 縦向き
+        draw_eval_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate); // 背景画像　オフセット　オフセット2 resize 縦向き
+		// cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,255), 2, 2);
         
         cv::Mat evalimage = bg.clone();
         cv::Mat frame; //取得したフレーム
@@ -738,9 +871,9 @@ int openPoseDemo()
 
 
 		// Define the codec and create VideoWriter object
-		int fourcc = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');
+		int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
 		cv::VideoWriter writer1, writer2;
-		int fps = 25;
+		int fps = 30;
         int skip_frame = 1;
         fps = fps/skip_frame;
         std::string outname;
@@ -749,8 +882,8 @@ int openPoseDemo()
   //       std::cin >> outname;
 
         // std::cout << outname << std::endl;
-		writer1.open("/data/output/" + outname + "_output1.avi", fourcc, fps, cv::Size(zoom[2], zoom[3]));
-		writer2.open("/data/output/" + outname + "_output2.avi", fourcc, fps, cv::Size(field_x, field_y));
+		writer1.open("/data/eval_output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(zoom[2], zoom[3]));
+		writer2.open("/data/eval_output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
 
         std::ofstream ofs("/data/csv/" + outname + "_1.csv");
         std::ofstream ofs2("/data/csv/" + outname + "_2.csv");
@@ -772,6 +905,7 @@ int openPoseDemo()
         std::chrono::system_clock::time_point Lstms = std::chrono::system_clock::now();
         std::chrono::system_clock::time_point Lstms2;
         Lstms2 = Lstms;
+        cap.set(CV_CAP_PROP_POS_FRAMES,0);
         while(cap.read(frame))//無限ループ
         {
             auto nowms = std::chrono::system_clock::now();
@@ -807,7 +941,7 @@ int openPoseDemo()
                     bg, evalimage, M, offset, area_resize_rate,
                     writer1, writer2, fnum,
                     (void *)&dp, (void *)&php,
-                    double(40), double(40*fnum),
+                    double(1000/fps), double((1000/fps)*fnum),
                     ofs, ofs2, ofs3);
                 if (userWantsToExit)
                 {
