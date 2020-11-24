@@ -66,9 +66,19 @@ INPUT=0531A4-1_fhd
 
 ./build/examples/user_code/usercode_nodisplay.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --write_json /data/output_json/$INPUT --video /dev/video0 
 
-docker run -it --rm --gpus all -e DISPLAY=$DISPLAY --net host -v /tmp/.X11-unix:/tmp/.X11-unix -v $HOME/.Xauthority:/root/.Xauthority  --device /dev/video0:/dev/video0  -v /home/r-hasegawa/workplace/openpose:/openpose -v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+ex
 
-./build/examples/user_code/evaldensity2.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --write_json /data/output_json/$INPUT --video /data/input/$INPUT.MP4
+docker run -it --gpus all --rm -e DISPLAY=$DISPLAY --net host \
+-v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+-v $HOME/.Xauthority:/root/.Xauthority  \
+--device /dev/video0:/devvideo0:mwr \
+-v /home/r-hasegawa/workplace/openpose:/openpose \
+-v /home/r-hasegawa/data:/data openpose_staf:r-hasegawa /bin/bash
+
+
+./build/examples/user_code/eval_A.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --write_json /data/output_json/$INPUT --video /data/eval_input/$INPUT.mp4
+
+./build/examples/user_code/demo.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --video /dev/video0
 
 
 

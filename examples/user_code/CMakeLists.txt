@@ -5,7 +5,9 @@ set(USER_CODE_FILES
     evaldensity.cpp
     evaldensity2.cpp
     eval_A.cpp
-    eval_B.cpp)
+    eval_B.cpp
+    demo.cpp
+    demo2.cpp)
 
 foreach(USER_CODE_FILE ${USER_CODE_FILES})
 

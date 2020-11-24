@@ -83,18 +83,18 @@ int vector_finder(std::vector<int> vec, int number) {
 }
 
 bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& datumsPtr, 
-	cv::Mat bg, cv::Mat evalimage, cv::Mat M, cv::Point offset, int area_resize_rate,
-	cv::VideoWriter writer1, cv::VideoWriter writer2, int fnum,
+    cv::Mat bg, cv::Mat evalimage, cv::Mat M, cv::Point offset, int area_resize_rate,
+    cv::VideoWriter writer1, cv::VideoWriter writer2, int fnum,
     void *data1, void *data2,
     double t, double t2,
     std::ofstream &ofs, std::ofstream &ofs2, std::ofstream &ofs3)
 {
     // std::cout << fnum << std::endl;
-	// 1.Nose 2.Chest 3.RShoulder 4.RElbow 5.RWrist
-	// 6.LShoulder 7.LElbow 8.LWrist 9.MidHip 10.RHip
-	// 11.RKnee 12.RAnkle 13.LHip 14.LKnee 15.LAnkle
-	// 16. REye 17.LEye 18.REar 19.LEar 20.Neck 21.Head
-	const int key_id = 9;
+    // 1.Nose 2.Chest 3.RShoulder 4.RElbow 5.RWrist
+    // 6.LShoulder 7.LElbow 8.LWrist 9.MidHip 10.RHip
+    // 11.RKnee 12.RAnkle 13.LHip 14.LKnee 15.LAnkle
+    // 16. REye 17.LEye 18.REar 19.LEar 20.Neck 21.Head
+    const int key_id = 9;
     const int continuance_threshold = 1; // 連続検出フレーム数のしきい値
 
 
@@ -107,13 +107,13 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
             cv::Mat disp_image = datumsPtr->at(0)->cvOutputData;
-        	auto poseIds = datumsPtr->at(0)->poseIds;
-			auto poseKeypoints = datumsPtr->at(0)->poseKeypoints;
+            auto poseIds = datumsPtr->at(0)->poseIds;
+            auto poseKeypoints = datumsPtr->at(0)->poseKeypoints;
 
             float d;
-    		
-    		std::vector<cv::Point2f> points(poseKeypoints.getSize(0) + php.Pts.size());
-			std::vector<cv::Point2f> positions(poseKeypoints.getSize(0) + php.Pts.size());
+            
+            std::vector<cv::Point2f> points(poseKeypoints.getSize(0) + php.Pts.size());
+            std::vector<cv::Point2f> positions(poseKeypoints.getSize(0) + php.Pts.size());
             std::vector<int> ids(poseIds.getSize(0) + php.Pts.size(), -1);
             std::vector<int> ids_frames(poseIds.getSize(0) + php.Pts.size(), 0);
             std::vector<int> ids_border(poseIds.getSize(0), -1);
@@ -122,13 +122,13 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             int php_num = 0;
             int delete_ids = 0;
 
-			for(int i = 0; i < poseKeypoints.getSize(0); i++){
-				const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; //2:nose 5:chest
-				if (Keypoint < 0.05
+            for(int i = 0; i < poseKeypoints.getSize(0); i++){
+                const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; //2:nose 5:chest
+                if (Keypoint < 0.05
                     || poseKeypoints[i*21*3+(2)*3-1] < 0.05 // 2.Chestが見えるかどうか
                     ){
                     // std::cout << "Key point 9(MidHip) not detected" << std::endl;
-					continue;
+                    continue;
                 }
                 int ids_index = vector_finder(php.ids, poseIds[i]);
                 if (ids_index>=0){
@@ -156,7 +156,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                     ids_border[pos_num] = 1;
                 }
                 // std::cout << pos_num+php_num << std::endl;
-				points[pos_num] = cv::Point2f(float(poseKeypoints[i*21*3+key_id*3-3]), float(poseKeypoints[i*21*3+key_id*3-2]) );
+                points[pos_num] = cv::Point2f(float(poseKeypoints[i*21*3+key_id*3-3]), float(poseKeypoints[i*21*3+key_id*3-2]) );
                 ids[pos_num] = poseIds[i];
                 cv::putText(disp_image, std::to_string(ids[pos_num]), cv::Point(int(points[pos_num].x + 20),int(points[pos_num].y + 15)), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,255,255), 3, CV_AA);
                 
@@ -209,13 +209,13 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 
                 pos_num++;
                 // std::cout << pos_num << std::endl;
-			}
+            }
 
 
             // ワールド座標系へ変換
-			if ( poseKeypoints.getSize(0) > 0){ 
-				cv::perspectiveTransform(points, positions, M);
-			}
+            if ( poseKeypoints.getSize(0) > 0){ 
+                cv::perspectiveTransform(points, positions, M);
+            }
 
             // // 隠れた人の場所と検出された場所を比較
             // 1. IDの一致
@@ -324,13 +324,15 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 
             int Endpoint = pos_num+php_num-delete_ids;      
 
-			// 描画処理
+            // 描画処理
             cv::Mat bg_copy = bg.clone();
             cv::putText(bg_copy, std::to_string(fnum), cv::Point(int(bg_copy.cols)-100,int(bg_copy.rows)-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
             cv::putText(bg_copy, "FPS:" + std::to_string(int(1000.0 / t)), cv::Point(int(bg_copy.cols)-200,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
             int s = int(t2/1000.0);
-            int ms = int(t2/10.0) - s * 100;
-            cv::putText(bg_copy, ("Time:" + std::to_string(s) + "." + std::to_string(ms)), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
+            int ms = int(t2)%1000;
+            std::ostringstream sout;
+            sout << std::setfill('0') << std::setw(3) << ms;
+            cv::putText(bg_copy, ("Time:" + std::to_string(s) + "." + sout.str()), cv::Point(30,30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 1.2, CV_AA);
 
             // このフレームで検出したすべて + 隠れていたもの
             std::vector<cv::Point2f> positions2(Endpoint);
@@ -343,15 +345,15 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
 
             int next_php_num = 0;
 
-			for(int i = 0; i < Endpoint+delete_ids; i++){
+            for(int i = 0; i < Endpoint+delete_ids; i++){
                 if(ids[i] < 0){
                     continue;
                 }
                 // positions2[i] = positions[i];
                 // ids2[i] = ids[i];
-				// if(positions2[i].x+offset.x < 0 || positions2[i].y+offset.y < 0){ // 範囲外
-				// 	continue;
-				// }
+                // if(positions2[i].x+offset.x < 0 || positions2[i].y+offset.y < 0){ // 範囲外
+                //  continue;
+                // }
                 if(i < pos_num){ // 検出された人
                     if(ids_frames[i] >= continuance_threshold){ // 連続で検出されたフレーム数が xxx 以上のとき白丸候補
                         ids_frames2[next_php_num] = ids_frames[i];
@@ -374,29 +376,29 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                     cv::circle(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), area_resize_rate*1.5/2, cv::Scalar(255, 255, 255), 2);
                     cv::putText(bg_copy, std::to_string(ids2[i]), cv::Point(int(positions2[i].x+offset.x+10), int(positions2[i].y+offset.y+10)), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(255,255,255), 2, CV_AA);
                 }
-			}
+            }
             // std::cout << ids << std::endl;
             // std::cout << ids2 << std::endl;
             // std::cout << php.Pts << std::endl;
             // std::cout << positions2 << std::endl;
 
-			// 距離判定
+            // 距離判定
             int num_dp = 0;
             std::vector<cv::Point2f> dps(positions2.size()*(positions2.size()-1));
-			if (positions2.size() >= 2){ // 距離リストを作成
-				for(int i = 0; i < positions2.size()-1; i++){
-					for(int j = i+1; j < positions2.size(); j++){
-						d = sqrtf( pow(positions2[i].x - positions2[j].x, 2) + pow(positions2[i].y - positions2[j].y, 2) );
-						if (d/area_resize_rate < 2.0){
-							cv::line(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), 
+            if (positions2.size() >= 2){ // 距離リストを作成
+                for(int i = 0; i < positions2.size()-1; i++){
+                    for(int j = i+1; j < positions2.size(); j++){
+                        d = sqrtf( pow(positions2[i].x - positions2[j].x, 2) + pow(positions2[i].y - positions2[j].y, 2) );
+                        if (d/area_resize_rate < 2.0){
+                            cv::line(bg_copy, cv::Point(int(positions2[i].x+offset.x), int(positions2[i].y+offset.y)), 
                                 cv::Point(int(positions2[j].x+offset.x), int(positions2[j].y+offset.y)), cv::Scalar(0,0,255), 2, CV_AA);
                             dps[num_dp] = (cv::Point2f(float((positions[i].x + positions[j].x)/2),float((positions[i].y + positions[j].y)/2)));
                             num_dp++;
-							// printf("2m Alert: (%d, %d)\n", int(poseIds[i]), int(poseIds[j]));
-						}
-					}
-				}
-			}
+                            // printf("2m Alert: (%d, %d)\n", int(poseIds[i]), int(poseIds[j]));
+                        }
+                    }
+                }
+            }
 
             // std::cout << dps << std::endl;
 
@@ -408,7 +410,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             std::vector<double> time(num_dp);
             std::vector<int> sf(num_dp);
             std::vector<int> status(dp.Pts.size(),1); // 1:引き継ぎ前 -1:引き継ぎ済
-            ofs << fnum << ',' << num_dp;
+            ofs << fnum << ',' << std::to_string(s) << "." << sout.str() << ',' << num_dp;
             if ( num_dp > 0){
                 for(int i = 0; i < num_dp; i++){
                     dps2[i] = dps[i];
@@ -512,19 +514,30 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             
             // 出力
             cv::putText(disp_image, std::to_string(fnum), cv::Point(int(disp_image.cols)-200,int(disp_image.rows)-20), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(255,255,255), 2.4, CV_AA);
+            
+            // gousei
+            // cv::Mat bg_copy2;
+            // cv::resize(bg_copy, bg_copy2, cv::Size(), 1.5, 1.5);
+            // cv::Mat roi = disp_image(cv::Rect(0, 0, bg_copy2.cols, bg_copy2.rows));
+            // bg_copy2.copyTo(roi);
+
+            // cv::Mat roi3 = disp_image(cv::Rect(bg_copy2.cols+20, 0, bg_copy3.cols, bg_copy3.rows));
+            // bg_copy3.copyTo(roi3);
+
             writer1 << disp_image;
             writer2 << bg_copy;
 
-			// 表示
-			if (true){
+            // 表示
+            if (true){
                 if (disp_image.cols > 1500){
                     cv::resize(disp_image, disp_image, cv::Size(), 0.5, 0.5);
                 }
-				cv::imshow("OpenPose Tracking", disp_image);
-				cv::imshow("Tracking", bg_copy);
-                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.6, 0.6);
+                cv::imshow("OpenPose Tracking", disp_image);
+                cv::resize(bg_copy, bg_copy, cv::Size(), 0.70, 0.70);
+                cv::imshow("Tracking", bg_copy);
+                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.70, 0.70);
                 cv::imshow("Total", evalimage_copy);
-			}
+            }
             // op::log("People IDs: " + datumsPtr->at(0)->poseIds.toString(), op::Priority::High);
             // op::log("Body keypoints: " + datumsPtr->at(0)->poseKeypoints.toString(), op::Priority::High);
             // op::log("Face keypoints: " + datumsPtr->at(0)->faceKeypoints.toString(), op::Priority::High);
@@ -579,12 +592,12 @@ void mouseCallback(int event, int x, int y, int flags, void *data)
             std::cout << "Error: Already defined 4 points" << std::endl;
         }
         if (info.pos == 4){
-        	std::cout << "Please press any key." << std::endl;
-			std::vector<cv::Point> poly;
-			for (int i = 0; i < 4; i++) {
-				poly.push_back(cv::Point(info.Pt[i]));
-			}
-			cv::polylines(info.img, poly, true, cv::Scalar::all(255), 3, cv::LINE_AA);
+            std::cout << "Please press any key." << std::endl;
+            std::vector<cv::Point> poly;
+            for (int i = 0; i < 4; i++) {
+                poly.push_back(cv::Point(info.Pt[i]));
+            }
+            cv::polylines(info.img, poly, true, cv::Scalar::all(255), 3, cv::LINE_AA);
         }
 
         break;
@@ -604,25 +617,32 @@ void mouseCallback(int event, int x, int y, int flags, void *data)
 
 cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列の作成
 {
-	// 射影変換のための画像情報構造体
+    // 射影変換のための画像情報構造体
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (false){
-    	// コールバック関数を登録する
-	    info.winName = "test";
-	    cv::namedWindow(info.winName);
-	    cv::setMouseCallback(info.winName, mouseCallback, (void *)&info);
-	    cv::imshow(info.winName, info.img);
-	    cv::waitKey();
-	    cv::destroyAllWindows();
+    if (true){
+        // コールバック関数を登録する
+        info.winName = "test";
+        cv::namedWindow(info.winName);
+        cv::setMouseCallback(info.winName, mouseCallback, (void *)&info);
+        cv::imshow(info.winName, info.img);
+        cv::waitKey();
+        cv::destroyAllWindows();
     }else{
-		// ４つの対応点
-		// cv::Point2f srcPoint[4] = { {左上 },{ 右上 },{ 右下 },{ 左下 } };
-		// info.Pt[0] = { 997, 513 };
-		// info.Pt[1] = { 1380, 540 };
-		// info.Pt[2] = { 1489, 895 };
-		// info.Pt[3] = { 1026, 898 };
+        // ４つの対応点
+        // cv::Point2f srcPoint[4] = { {左上 },{ 右上 },{ 右下 },{ 左下 } };
+        // info.Pt[0] = { 997, 513 };
+        // info.Pt[1] = { 1380, 540 };
+        // info.Pt[2] = { 1489, 895 };
+        // info.Pt[3] = { 1026, 898 };
+
+        // front camera
+        info.Pt[0] = {585,450};
+        info.Pt[1] = {1503,474};
+        info.Pt[2] = {1703,813};
+        info.Pt[3] = {341,783};
+
 
         // 3m 100cm
         // info.Pt[0] = { 512, 185 };
@@ -635,20 +655,20 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
         // info.Pt[2] = { 1148, 786 };
         // info.Pt[3] = { 365, 530 };
         // // 6m 90cm
-        info.Pt[0] = {523,79};
-        info.Pt[1] = {1351,81};
-        info.Pt[2] = {1719,700};
-        info.Pt[3] = {149,698};
+        // info.Pt[0] = {523,79};
+        // info.Pt[1] = {1351,81};
+        // info.Pt[2] = {1719,700};
+        // info.Pt[3] = {149,698};
 
     }
     cv::Point2f srcPoint[4] = info.Pt;
-	cv::Point2f dstPoint[4] = { { 0, 0 },{float(resize_rate_x), 0 },{float(resize_rate_x), float(resize_rate_y) },{ 0, float(resize_rate_y) } };
-	cv::Mat M = cv::getPerspectiveTransform(srcPoint,dstPoint);
-	// cv::Mat M = cv::getPerspectiveTransform(dstPoint,srcPoint);
-	// 確認
-	// cv::imshow("test",cpy_frame);
-	// cv::waitKey(0);
-	return M;
+    cv::Point2f dstPoint[4] = { { 0, 0 },{float(20 * 20), 0 },{float(11.5 * 20), float(9.0 * 20) },{ 8.5 * 20, float(9.0 * 20) } };
+    cv::Mat M = cv::getPerspectiveTransform(srcPoint,dstPoint);
+    // cv::Mat M = cv::getPerspectiveTransform(dstPoint,srcPoint);
+    // 確認
+    // cv::imshow("test",cpy_frame);
+    // cv::waitKey(0);
+    return M;
 }
 
 std::vector<int> zoomImage (cv::Mat frame)//変換行列の作成
@@ -739,7 +759,7 @@ void configureWrapper(op::Wrapper& opWrapper)
         // outputSize
         const auto outputSize = op::flagsToPoint(FLAGS_output_resolution, "-1x-1");
         // netInputSize
-        const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "-1x368");
+        const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "1312x736");
         // const auto netInputSize = op::flagsToPoint(FLAGS_net_resolution, "-1x368");
         // -1x368 -> (16:9 = 1920x1080) -> 656x368
         // faceNetInputSize
@@ -844,75 +864,46 @@ int openPoseDemo()
         // const auto imagePaths = op::getFilesOnDirectory(FLAGS_image_dir, op::Extensions::Images);
 
         // test用フィールドの作成
-        int area_resize_rate = 30;
-		int mark_area_x = int(area_resize_rate * 10);
-		int mark_area_y = int(area_resize_rate * 10);
-		// int mark_area_x = int(area_resize_rate * 2.0);
-		// int mark_area_y = int(area_resize_rate * 2.0);
-		int offset_x = int(area_resize_rate * 2.0);
-		int offset_y = int(area_resize_rate * 2.0);
-		int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
-		int field_y = mark_area_y + 2*offset_y;
-		cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
-    	int cols = bg.cols;
-    	int rows = bg.rows;
-	    for (int j = 0; j < rows; j++) {
-	        for (int i = 0; i < cols; i++) {
+        int area_resize_rate = 20;
+        // int mark_area_x = int(area_resize_rate * 8);
+        // int mark_area_y = int(area_resize_rate * 4);
+        int mark_area_x = int(area_resize_rate * 20.0);
+        int mark_area_y = int(area_resize_rate * 20.0);
+        int offset_x = int(area_resize_rate * 3.0);
+        int offset_y = int(area_resize_rate * 3.0);
+        // int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
+        int field_x = mark_area_x + 2*offset_x;
+        int field_y = mark_area_y + 2*offset_y;
+        cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
+        int cols = bg.cols;
+        int rows = bg.rows;
+        for (int j = 0; j < rows; j++) {
+            for (int i = 0; i < cols; i++) {
             bg.at<cv::Vec3b>(j, i)[0] = 68; //青
             bg.at<cv::Vec3b>(j, i)[1] = 153; //緑
             bg.at<cv::Vec3b>(j, i)[2] = 0; //赤
             // bg.at<cv::Vec3b>(j, i)[0] = 161; //青
             // bg.at<cv::Vec3b>(j, i)[1] = 215; //緑
             // bg.at<cv::Vec3b>(j, i)[2] = 252; //赤
-	        }
-	    }
-		// cv::line(bg, cv::Point(offset_x, offset_y), cv::Point(x, h-1), (255, 0, 0));
-		cv::Point offset = {offset_x, offset_y};
+            }
+        }
+        // cv::line(bg, cv::Point(offset_x, offset_y), cv::Point(x, h-1), (255, 0, 0));
+        cv::Point offset = {offset_x, offset_y};
         // draw_tennis_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, false); // 背景画像　オフセット　オフセット2 resize 縦向き
-        draw_eval_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, 10, 10); // 背景画像　オフセット　オフセット2 resize 縦向き
-		// cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,255), 2, 2);
+        draw_eval_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, mark_area_x/area_resize_rate, mark_area_y/area_resize_rate ); // 背景画像　オフセット　オフセット2 resize 縦向き
+        // cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,255), 2, 2);
         
         cv::Mat evalimage = bg.clone();
         cv::Mat frame; //取得したフレーム
 
         // imwrite("bg.png", bg);
-
         cv::VideoCapture cap(FLAGS_video);
         if(!cap.isOpened())//カメラデバイスが正常にオープンしたか確認．
         {
             //読み込みに失敗したときの処理
+            std::cout << "Input Error" << std::endl;
             return -1;
         }
-
-        if (std::equal(FLAGS_video.begin(), FLAGS_video.end(), "/dev/video0")){
-            op::log("Use Web Camera", op::Priority::High);
-            cap.set(CV_CAP_PROP_FRAME_WIDTH, 1920); // カメラ画像の横幅を1280に設定
-            cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080); // カメラ画像の縦幅を720に設定
-            for(int i = 0;i<10;i++){
-                cap.read(frame);
-            }
-        }
-
-
-
-        std::vector<int> zoom(4);
-
-        cv::Rect rect;
-        cv::Mat M;
-
-        if(cap.read(frame)){
-        if (frame.cols > 1920){
-         cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
-        }
-        zoom[2] = frame.cols;
-        zoom[3] = frame.rows;
-        // zoom = zoomImage(frame);
-        rect = cv::Rect(zoom[0], zoom[1], zoom[2], zoom[3]);
-        M = getM(frame(rect), mark_area_x, mark_area_y);
-        // std::cout << M << std::endl;
-        }
-
-
 
         // Define the codec and create VideoWriter object
         int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
@@ -925,13 +916,48 @@ int openPoseDemo()
         // std::cout << "Please Input Filename" << std::endl;
   //       std::cin >> outname;
 
-        // std::cout << outname << std::endl;
-        writer1.open("/data/eval_output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(zoom[2], zoom[3]));
-        writer2.open("/data/eval_output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
+        if (std::equal(FLAGS_video.begin(), FLAGS_video.end(), "/dev/video0")){
+            op::log("Use Web Camera", op::Priority::High);
+            cap.set(CV_CAP_PROP_FRAME_WIDTH, 1920); // カメラ画像の横幅を1280に設定
+            cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080); // カメラ画像の縦幅を720に設定
+            for(int i = 0;i<10;i++){
+                cap.read(frame);
+            }
+            auto nowms = std::chrono::system_clock::now();
+            auto now_c = std::chrono::system_clock::to_time_t(nowms);
+            std::stringstream sss;
+            sss << std::put_time(localtime(&now_c), "%Y%m%d_%H%M%S");
+            // std::cout << sss.str() << std::endl;
+            outname = sss.str();
+        }
 
-        std::ofstream ofs("/data/csv/" + outname + "_1.csv");
-        std::ofstream ofs2("/data/csv/" + outname + "_2.csv");
-        std::ofstream ofs3("/data/csv/" + outname + "_3.csv");
+
+        std::vector<int> zoom(4);
+
+        cv::Rect rect;
+        cv::Mat M;
+
+        if(cap.read(frame)){
+            if (frame.cols > 1920){
+             cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
+            }
+        zoom[2] = frame.cols;
+        zoom[3] = frame.rows;
+        // zoom = zoomImage(frame);
+        // cv::flip(frame, frame, 1); // 水平反転
+        rect = cv::Rect(zoom[0], zoom[1], zoom[2], zoom[3]);
+        M = getM(frame(rect), mark_area_x, mark_area_y);
+        // std::cout << M << std::endl;
+        }
+
+
+        // std::cout << outname << std::endl;
+        writer1.open("/data/demo/output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(zoom[2], zoom[3]));
+        writer2.open("/data/demo/output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
+
+        std::ofstream ofs("/data/demo/csv/" + outname + "_1.csv");
+        std::ofstream ofs2("/data/demo/csv/" + outname + "_2.csv");
+        std::ofstream ofs3("/data/demo/csv/" + outname + "_3.csv");
         if (!ofs || !ofs2 || !ofs3){
             std::cout << "Could not open CSV file" << std::endl;
             return 0;
@@ -945,7 +971,7 @@ int openPoseDemo()
         op::log("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
         int fnum = 0;
-        double FPS = fps;
+        double FPS =fps;
         std::chrono::system_clock::time_point Lstms = std::chrono::system_clock::now();
         std::chrono::system_clock::time_point Lstms2;
         Lstms2 = Lstms;
@@ -956,14 +982,18 @@ int openPoseDemo()
             auto diff = nowms - Lstms; // スタートからの経過時間
             auto diff2 = nowms - Lstms2; // １フレームごとの経過時間
             Lstms = nowms;
-            // FPS = 1000.0 / double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+            FPS = 1000.0 / double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
             // std::cout << FPS << std::endl;
 
+            auto now_c = std::chrono::system_clock::to_time_t(nowms);
+            std::stringstream ss;
+            ss << std::put_time(localtime(&now_c), "%Y:%m:%d_%H:%M:%S");
+            // std::cout << ss.str() << std::endl;
 
-
-        	if (frame.cols > 1920){
-        		cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
-        	}
+            // cv::flip(frame, frame, 1); // 水平反転
+            if (frame.cols > 1920){
+                cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
+            }
             const auto imageToProcess = frame(rect);;
 
         // // Process and display images
@@ -979,13 +1009,13 @@ int openPoseDemo()
                     bg, evalimage, M, offset, area_resize_rate,
                     writer1, writer2, fnum,
                     (void *)&dp, (void *)&php,
-                    double(1000/FPS), double((1000/FPS)*fnum),
-                    ofs, ofs2, ofs3);
+                    double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count()), double(std::chrono::duration_cast<std::chrono::milliseconds>(diff2).count())
+                    ,ofs, ofs2, ofs3);
                 // const auto userWantsToExit = printKeypoints(datumProcessed, 
                 //     bg, evalimage, M, offset, area_resize_rate,
                 //     writer1, writer2, fnum,
                 //     (void *)&dp, (void *)&php,
-                //     double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count()), double(std::chrono::duration_cast<std::chrono::milliseconds>(diff2).count()),
+                //     double(1000/fps), double((1000/fps)*fnum),
                 //     ofs, ofs2, ofs3);
                 if (userWantsToExit)
                 {
@@ -1001,13 +1031,22 @@ int openPoseDemo()
         }
 
         for(int j = 0; j < dp.Pts.size(); j++){
-            ofs2 << dp.ids[j] << ','  << dp.sframe[j] << ','  << fnum-1 << ',' << dp.t[j]/1000 << ','  << dp.Pts[j].x/area_resize_rate << ','  << dp.Pts[j].y/area_resize_rate << ','  << std::endl;
+            ofs2 << dp.ids[j] << ','  << dp.sframe[j] << ','  << fnum  << ',' << dp.t[j]/1000 << ','  << dp.Pts[j].x/area_resize_rate << ','  << dp.Pts[j].y/area_resize_rate << ','  << std::endl;
         }
 
         // Measuring total time
         op::printTime(opTimer, "OpenPose demo successfully finished. Total time: ", " seconds.", op::Priority::High);
 
         // Return
+        std::cout << "OUTPUT FILE" << std::endl;
+        std::cout << "VIDEO: /data/demo/csv/" << outname << "_outputXX.mp4"<< std::endl;
+        std::cout << "CSV: /data/demo/csv/" << outname << "_XX.csv"<< std::endl;
+        auto nowms = std::chrono::system_clock::now();
+        auto now_c = std::chrono::system_clock::to_time_t(nowms);
+            std::stringstream sss;
+            sss << std::put_time(localtime(&now_c), "%Y:%m:%d_%H:%M:%S");
+            // std::cout << sss.str() << std::endl;
+        std::cout << "End Demo : " << sss.str() << std::endl;
         return 0;
     }
     catch (const std::exception& e)

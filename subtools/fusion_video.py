@@ -8,8 +8,8 @@ INTERVAL= 1     # 待ち時間
 
 # # 元ビデオファイル
 def main(input_filename):
-    FILE_NAME_LEFT = "/data/output/"+input_filename + "_output1.avi" # 左
-    FILE_NAME_RIGHT = "/data/output/"+input_filename + "_output2.avi" # 右
+    FILE_NAME_LEFT = "/data/eval_output/"+input_filename + "_output1.mp4" # 左
+    FILE_NAME_RIGHT = "/data/eval_output/"+input_filename + "_output2.mp4" # 右
 
     # 元ビデオファイル読み込み
     video_capture_left = cv2.VideoCapture(FILE_NAME_LEFT)
@@ -22,9 +22,9 @@ def main(input_filename):
     w = int(video_capture_left.get(3)) + int(video_capture_right.get(3)*resize_rate)
     h = int(video_capture_left.get(4))
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
     fps = video_capture_left.get(cv2.CAP_PROP_FPS)
-    out = cv2.VideoWriter("/data/output/"+input_filename + '_fusion.avi', fourcc, fps, (w, h))
+    out = cv2.VideoWriter("/data/eval_output/"+input_filename + '_fusion.mp4', fourcc, fps, (w, h))
 
     # 変換処理ループ
     while True:
