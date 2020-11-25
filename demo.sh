@@ -1,1 +1,1 @@
-./build/examples/user_code/demo.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --video /dev/video0
+./build/examples/user_code/demo.bin --model_pose BODY_21A --tracking 1 --render_pose 1 --video /dev/video0 --net_resolution 960x960

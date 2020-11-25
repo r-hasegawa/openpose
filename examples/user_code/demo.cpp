@@ -535,7 +535,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                 cv::imshow("OpenPose Tracking", disp_image);
                 cv::resize(bg_copy, bg_copy, cv::Size(), 0.70, 0.70);
                 cv::imshow("Tracking", bg_copy);
-                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.70, 0.70);
+                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.50, 0.50);
                 cv::imshow("Total", evalimage_copy);
             }
             // op::log("People IDs: " + datumsPtr->at(0)->poseIds.toString(), op::Priority::High);
@@ -621,7 +621,7 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (true){
+    if (false){
     	// コールバック関数を登録する
 	    info.winName = "test";
 	    cv::namedWindow(info.winName);
@@ -631,35 +631,10 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
 	    cv::destroyAllWindows();
     }else{
 		// ４つの対応点
-		// cv::Point2f srcPoint[4] = { {左上 },{ 右上 },{ 右下 },{ 左下 } };
-		// info.Pt[0] = { 997, 513 };
-		// info.Pt[1] = { 1380, 540 };
-		// info.Pt[2] = { 1489, 895 };
-		// info.Pt[3] = { 1026, 898 };
-
-        // front camera
-        info.Pt[0] = {585,450};
-        info.Pt[1] = {1503,474};
-        info.Pt[2] = {1703,813};
-        info.Pt[3] = {341,783};
-
-
-        // 3m 100cm
-        // info.Pt[0] = { 512, 185 };
-        // info.Pt[1] = { 1355, 177 };
-        // info.Pt[2] = { 2955, 1142 };
-        // info.Pt[3] = { -70, 1173 };
-        // // 4.5m
-        // info.Pt[0] = { 1004, 412 };
-        // info.Pt[1] = { 1754, 556 };
-        // info.Pt[2] = { 1148, 786 };
-        // info.Pt[3] = { 365, 530 };
-        // // 6m 90cm
-        // info.Pt[0] = {523,79};
-        // info.Pt[1] = {1351,81};
-        // info.Pt[2] = {1719,700};
-        // info.Pt[3] = {149,698};
-
+        info.Pt[0] = {510,290};
+        info.Pt[1] = {1501,283};
+        info.Pt[2] = {1909,650};
+        info.Pt[3] = {107,661};
     }
     cv::Point2f srcPoint[4] = info.Pt;
 	cv::Point2f dstPoint[4] = { { 0, 0 },{float(resize_rate_x), 0 },{float(resize_rate_x), float(resize_rate_y) },{ 0, float(resize_rate_y) } };
@@ -725,6 +700,12 @@ void draw_tennis_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr,
 
 void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr, int area_x, int area_y){
     cv::Point tl = {offset.x+offset2.x,offset.y+offset2.y};
+    cv::rectangle(bg, cv::Point(tl.x+int(arr*(9)),tl.y+int(arr*(8.5)))
+        , cv::Point(tl.x+int(arr*(15)),tl.y+int(arr*(11.5))), cv::Scalar(161,215,252), -1, CV_AA);
+    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*8.5)), cv::Size(int(arr*6),int(arr*6)), 0,180,270, cv::Scalar(161,215,252), -1, CV_AA);
+    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*11.5)), cv::Size(int(arr*6),int(arr*6)), 0,90,180, cv::Scalar(161,215,252), -1, CV_AA);
+
+
     int i;
     for(i=0;i<=area_x;i++){
         cv::line(bg, cv::Point(tl.x+int(arr*i),tl.y), cv::Point(tl.x+int(arr*i),tl.y+int(arr*(area_y))), cv::Scalar(255,255,255), 2, CV_AA);
@@ -732,6 +713,8 @@ void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr, i
     for(i=0;i<=area_y;i++){
         cv::line(bg, cv::Point(tl.x,tl.y+int(arr*i)), cv::Point(tl.x+int(arr*area_x),tl.y+int(arr*i)), cv::Scalar(255,255,255), 2, CV_AA);
     }
+
+
     
 }
 
@@ -864,10 +847,10 @@ int openPoseDemo()
         // const auto imagePaths = op::getFilesOnDirectory(FLAGS_image_dir, op::Extensions::Images);
 
         // test用フィールドの作成
-        int area_resize_rate = 40;
+        int area_resize_rate = 30;
 		// int mark_area_x = int(area_resize_rate * 8);
 		// int mark_area_y = int(area_resize_rate * 4);
-		int mark_area_x = int(area_resize_rate * 10.0);
+		int mark_area_x = int(area_resize_rate * 15.0);
 		int mark_area_y = int(area_resize_rate * 20.0);
 		int offset_x = int(area_resize_rate * 3.0);
 		int offset_y = int(area_resize_rate * 3.0);

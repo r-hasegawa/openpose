@@ -48,7 +48,7 @@ def main(input_filename):
                delimiter=',', dtype='float32', usecols=[0, 1, 2, 3, 4, 5])
 
   interval_dist = 1.0 # 1.0 m 単位でヒートマップ作成
-  xlim = 10 # 10 x 10 の範囲
+  xlim = 15 # 10 x 10 の範囲
   ylim = 20
   xoff = 0.0 # キャリブレーションエリアからのオフセット
   yoff = 0.0 
