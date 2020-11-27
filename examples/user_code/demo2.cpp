@@ -535,7 +535,7 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
                 cv::imshow("OpenPose Tracking", disp_image);
                 cv::resize(bg_copy, bg_copy, cv::Size(), 0.70, 0.70);
                 cv::imshow("Tracking", bg_copy);
-                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.70, 0.70);
+                cv::resize(evalimage_copy, evalimage_copy, cv::Size(), 0.50, 0.50);
                 cv::imshow("Total", evalimage_copy);
             }
             // op::log("People IDs: " + datumsPtr->at(0)->poseIds.toString(), op::Priority::High);
@@ -592,12 +592,12 @@ void mouseCallback(int event, int x, int y, int flags, void *data)
             std::cout << "Error: Already defined 4 points" << std::endl;
         }
         if (info.pos == 4){
-            std::cout << "Please press any key." << std::endl;
-            std::vector<cv::Point> poly;
-            for (int i = 0; i < 4; i++) {
-                poly.push_back(cv::Point(info.Pt[i]));
-            }
-            cv::polylines(info.img, poly, true, cv::Scalar::all(255), 3, cv::LINE_AA);
+        	std::cout << "Please press any key." << std::endl;
+			std::vector<cv::Point> poly;
+			for (int i = 0; i < 4; i++) {
+				poly.push_back(cv::Point(info.Pt[i]));
+			}
+			cv::polylines(info.img, poly, true, cv::Scalar::all(255), 3, cv::LINE_AA);
         }
 
         break;
@@ -617,58 +617,33 @@ void mouseCallback(int event, int x, int y, int flags, void *data)
 
 cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列の作成
 {
-    // 射影変換のための画像情報構造体
+	// 射影変換のための画像情報構造体
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (true){
-        // コールバック関数を登録する
-        info.winName = "test";
-        cv::namedWindow(info.winName);
-        cv::setMouseCallback(info.winName, mouseCallback, (void *)&info);
-        cv::imshow(info.winName, info.img);
-        cv::waitKey();
-        cv::destroyAllWindows();
+    if (false){
+    	// コールバック関数を登録する
+	    info.winName = "test";
+	    cv::namedWindow(info.winName);
+	    cv::setMouseCallback(info.winName, mouseCallback, (void *)&info);
+	    cv::imshow(info.winName, info.img);
+	    cv::waitKey();
+	    cv::destroyAllWindows();
     }else{
-        // ４つの対応点
-        // cv::Point2f srcPoint[4] = { {左上 },{ 右上 },{ 右下 },{ 左下 } };
-        // info.Pt[0] = { 997, 513 };
-        // info.Pt[1] = { 1380, 540 };
-        // info.Pt[2] = { 1489, 895 };
-        // info.Pt[3] = { 1026, 898 };
-
-        // front camera
-        info.Pt[0] = {585,450};
-        info.Pt[1] = {1503,474};
-        info.Pt[2] = {1703,813};
-        info.Pt[3] = {341,783};
-
-
-        // 3m 100cm
-        // info.Pt[0] = { 512, 185 };
-        // info.Pt[1] = { 1355, 177 };
-        // info.Pt[2] = { 2955, 1142 };
-        // info.Pt[3] = { -70, 1173 };
-        // // 4.5m
-        // info.Pt[0] = { 1004, 412 };
-        // info.Pt[1] = { 1754, 556 };
-        // info.Pt[2] = { 1148, 786 };
-        // info.Pt[3] = { 365, 530 };
-        // // 6m 90cm
-        // info.Pt[0] = {523,79};
-        // info.Pt[1] = {1351,81};
-        // info.Pt[2] = {1719,700};
-        // info.Pt[3] = {149,698};
-
+		// ４つの対応点
+        info.Pt[0] = {510,290};
+        info.Pt[1] = {1501,283};
+        info.Pt[2] = {1909,650};
+        info.Pt[3] = {107,661};
     }
     cv::Point2f srcPoint[4] = info.Pt;
-    cv::Point2f dstPoint[4] = { { 0, 0 },{float(20 * 20), 0 },{float(11.5 * 20), float(9.0 * 20) },{ 8.5 * 20, float(9.0 * 20) } };
-    cv::Mat M = cv::getPerspectiveTransform(srcPoint,dstPoint);
-    // cv::Mat M = cv::getPerspectiveTransform(dstPoint,srcPoint);
-    // 確認
-    // cv::imshow("test",cpy_frame);
-    // cv::waitKey(0);
-    return M;
+	cv::Point2f dstPoint[4] = { { 0, 0 },{float(resize_rate_x), 0 },{float(resize_rate_x), float(resize_rate_y) },{ 0, float(resize_rate_y) } };
+	cv::Mat M = cv::getPerspectiveTransform(srcPoint,dstPoint);
+	// cv::Mat M = cv::getPerspectiveTransform(dstPoint,srcPoint);
+	// 確認
+	// cv::imshow("test",cpy_frame);
+	// cv::waitKey(0);
+	return M;
 }
 
 std::vector<int> zoomImage (cv::Mat frame)//変換行列の作成
@@ -725,6 +700,12 @@ void draw_tennis_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr,
 
 void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr, int area_x, int area_y){
     cv::Point tl = {offset.x+offset2.x,offset.y+offset2.y};
+    cv::rectangle(bg, cv::Point(tl.x+int(arr*(9)),tl.y+int(arr*(8.5)))
+        , cv::Point(tl.x+int(arr*(15)),tl.y+int(arr*(11.5))), cv::Scalar(161,215,252), -1, CV_AA);
+    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*8.5)), cv::Size(int(arr*6),int(arr*6)), 0,180,270, cv::Scalar(161,215,252), -1, CV_AA);
+    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*11.5)), cv::Size(int(arr*6),int(arr*6)), 0,90,180, cv::Scalar(161,215,252), -1, CV_AA);
+
+
     int i;
     for(i=0;i<=area_x;i++){
         cv::line(bg, cv::Point(tl.x+int(arr*i),tl.y), cv::Point(tl.x+int(arr*i),tl.y+int(arr*(area_y))), cv::Scalar(255,255,255), 2, CV_AA);
@@ -732,6 +713,8 @@ void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr, i
     for(i=0;i<=area_y;i++){
         cv::line(bg, cv::Point(tl.x,tl.y+int(arr*i)), cv::Point(tl.x+int(arr*area_x),tl.y+int(arr*i)), cv::Scalar(255,255,255), 2, CV_AA);
     }
+
+
     
 }
 
@@ -864,34 +847,34 @@ int openPoseDemo()
         // const auto imagePaths = op::getFilesOnDirectory(FLAGS_image_dir, op::Extensions::Images);
 
         // test用フィールドの作成
-        int area_resize_rate = 20;
-        // int mark_area_x = int(area_resize_rate * 8);
-        // int mark_area_y = int(area_resize_rate * 4);
-        int mark_area_x = int(area_resize_rate * 20.0);
-        int mark_area_y = int(area_resize_rate * 20.0);
-        int offset_x = int(area_resize_rate * 3.0);
-        int offset_y = int(area_resize_rate * 3.0);
-        // int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
+        int area_resize_rate = 30;
+		// int mark_area_x = int(area_resize_rate * 8);
+		// int mark_area_y = int(area_resize_rate * 4);
+		int mark_area_x = int(area_resize_rate * 15.0);
+		int mark_area_y = int(area_resize_rate * 20.0);
+		int offset_x = int(area_resize_rate * 3.0);
+		int offset_y = int(area_resize_rate * 3.0);
+		// int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
         int field_x = mark_area_x + 2*offset_x;
-        int field_y = mark_area_y + 2*offset_y;
-        cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
-        int cols = bg.cols;
-        int rows = bg.rows;
-        for (int j = 0; j < rows; j++) {
-            for (int i = 0; i < cols; i++) {
+		int field_y = mark_area_y + 2*offset_y;
+		cv::Mat bg = cv::Mat::zeros(field_y, field_x , CV_8UC3);
+    	int cols = bg.cols;
+    	int rows = bg.rows;
+	    for (int j = 0; j < rows; j++) {
+	        for (int i = 0; i < cols; i++) {
             bg.at<cv::Vec3b>(j, i)[0] = 68; //青
             bg.at<cv::Vec3b>(j, i)[1] = 153; //緑
             bg.at<cv::Vec3b>(j, i)[2] = 0; //赤
             // bg.at<cv::Vec3b>(j, i)[0] = 161; //青
             // bg.at<cv::Vec3b>(j, i)[1] = 215; //緑
             // bg.at<cv::Vec3b>(j, i)[2] = 252; //赤
-            }
-        }
-        // cv::line(bg, cv::Point(offset_x, offset_y), cv::Point(x, h-1), (255, 0, 0));
-        cv::Point offset = {offset_x, offset_y};
+	        }
+	    }
+		// cv::line(bg, cv::Point(offset_x, offset_y), cv::Point(x, h-1), (255, 0, 0));
+		cv::Point offset = {offset_x, offset_y};
         // draw_tennis_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, false); // 背景画像　オフセット　オフセット2 resize 縦向き
         draw_eval_court(bg, offset, cv::Point(int(area_resize_rate*-(0)),int(area_resize_rate*-(0))), area_resize_rate, mark_area_x/area_resize_rate, mark_area_y/area_resize_rate ); // 背景画像　オフセット　オフセット2 resize 縦向き
-        // cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,255), 2, 2);
+		// cv::rectangle(bg, offset, cv::Point(offset_x+mark_area_x, offset_y+mark_area_y), cv::Scalar(255,255,255), 2, 2);
         
         cv::Mat evalimage = bg.clone();
         cv::Mat frame; //取得したフレーム
@@ -952,8 +935,8 @@ int openPoseDemo()
 
 
         // std::cout << outname << std::endl;
-        writer1.open("/data/demo/output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(zoom[2], zoom[3]));
-        writer2.open("/data/demo/output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
+		writer1.open("/data/demo/output/" + outname + "_output1.mp4", fourcc, fps, cv::Size(zoom[2], zoom[3]));
+		writer2.open("/data/demo/output/" + outname + "_output2.mp4", fourcc, fps, cv::Size(field_x, field_y));
 
         std::ofstream ofs("/data/demo/csv/" + outname + "_1.csv");
         std::ofstream ofs2("/data/demo/csv/" + outname + "_2.csv");
@@ -991,9 +974,9 @@ int openPoseDemo()
             // std::cout << ss.str() << std::endl;
 
             // cv::flip(frame, frame, 1); // 水平反転
-            if (frame.cols > 1920){
-                cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
-            }
+        	if (frame.cols > 1920){
+        		cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
+        	}
             const auto imageToProcess = frame(rect);;
 
         // // Process and display images
@@ -1006,8 +989,8 @@ int openPoseDemo()
                 // printKeypoints(datumProcessed, bg, M, offset);
 
                 const auto userWantsToExit = printKeypoints(datumProcessed, 
-                    bg, evalimage, M, offset, area_resize_rate,
-                    writer1, writer2, fnum,
+                	bg, evalimage, M, offset, area_resize_rate,
+                	writer1, writer2, fnum,
                     (void *)&dp, (void *)&php,
                     double(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count()), double(std::chrono::duration_cast<std::chrono::milliseconds>(diff2).count())
                     ,ofs, ofs2, ofs3);

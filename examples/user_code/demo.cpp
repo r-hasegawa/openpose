@@ -621,7 +621,7 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (false){
+    if (true){
     	// コールバック関数を登録する
 	    info.winName = "test";
 	    cv::namedWindow(info.winName);
