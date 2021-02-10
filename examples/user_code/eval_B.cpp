@@ -123,9 +123,9 @@ bool printKeypoints(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>
             int delete_ids = 0;
 
             for(int i = 0; i < poseKeypoints.getSize(0); i++){
-                const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; //2:nose 5:chest
-                if (Keypoint < 0.05
-                    || poseKeypoints[i*21*3+(2)*3-1] < 0.05 // 2.Chestが見えるかどうか
+                const float Keypoint = poseKeypoints[i*21*3+key_id*3-1]; 
+                if (Keypoint < 0.5
+                    || poseKeypoints[i*21*3+(2)*3-1] < 0.5 // 2.Chestが見えるかどうか
                     ){
                     // std::cout << "Key point 9(MidHip) not detected" << std::endl;
                     continue;

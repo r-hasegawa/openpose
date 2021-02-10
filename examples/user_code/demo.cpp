@@ -621,7 +621,7 @@ cv::Mat getM (cv::Mat frame, int resize_rate_x, int resize_rate_y)//変換行列
     ImageInfo info;
     // 画像を読み込む
     info.img = frame;
-    if (false){
+    if (true){
     	// コールバック関数を登録する
 	    info.winName = "test";
 	    cv::namedWindow(info.winName);
@@ -653,6 +653,7 @@ std::vector<int> zoomImage (cv::Mat frame)//変換行列の作成
     // 画像を読み込む
     info.img = frame;
     if (true){
+        std::cout << "Place the cursor in the upper left, upper right, lower right, lower left and click them.";
         // コールバック関数を登録する
         info.winName = "zoom";
         cv::namedWindow(info.winName);
@@ -848,12 +849,18 @@ int openPoseDemo()
 
         // test用フィールドの作成
         int area_resize_rate = 30;
-		// int mark_area_x = int(area_resize_rate * 8);
-		// int mark_area_y = int(area_resize_rate * 4);
-		int mark_area_x = int(area_resize_rate * 15.0);
-		int mark_area_y = int(area_resize_rate * 20.0);
-		int offset_x = int(area_resize_rate * 3.0);
-		int offset_y = int(area_resize_rate * 3.0);
+        float input_width, input_depth, input_offset;
+        std::cout << "Input Width[m] =";
+        std::cin >> input_width;
+        std::cout << "Input Depth[m] =";
+        std::cin >> input_depth;
+        std::cout << "Input Offset (outer frame size)[m] =";
+        std::cin >> input_offset;
+
+		int mark_area_x = int(area_resize_rate * input_width);
+		int mark_area_y = int(area_resize_rate * input_depth);
+		int offset_x = int(area_resize_rate * input_offset);
+		int offset_y = int(area_resize_rate * input_offset);
 		// int field_x = mark_area_x + 1*offset_x + int(area_resize_rate * 2.0);
         int field_x = mark_area_x + 2*offset_x;
 		int field_y = mark_area_y + 2*offset_y;
