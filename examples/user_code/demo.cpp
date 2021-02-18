@@ -701,10 +701,10 @@ void draw_tennis_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr,
 
 void draw_eval_court(cv::Mat bg, cv::Point offset, cv::Point offset2, int arr, int area_x, int area_y){
     cv::Point tl = {offset.x+offset2.x,offset.y+offset2.y};
-    cv::rectangle(bg, cv::Point(tl.x+int(arr*(9)),tl.y+int(arr*(8.5)))
-        , cv::Point(tl.x+int(arr*(15)),tl.y+int(arr*(11.5))), cv::Scalar(161,215,252), -1, CV_AA);
-    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*8.5)), cv::Size(int(arr*6),int(arr*6)), 0,180,270, cv::Scalar(161,215,252), -1, CV_AA);
-    cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*11.5)), cv::Size(int(arr*6),int(arr*6)), 0,90,180, cv::Scalar(161,215,252), -1, CV_AA);
+    // cv::rectangle(bg, cv::Point(tl.x+int(arr*(9)),tl.y+int(arr*(8.5)))
+    //     , cv::Point(tl.x+int(arr*(15)),tl.y+int(arr*(11.5))), cv::Scalar(161,215,252), -1, CV_AA);
+    // cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*8.5)), cv::Size(int(arr*6),int(arr*6)), 0,180,270, cv::Scalar(161,215,252), -1, CV_AA);
+    // cv::ellipse(bg, cv::Point(tl.x+int(arr*15),tl.y+int(arr*11.5)), cv::Size(int(arr*6),int(arr*6)), 0,90,180, cv::Scalar(161,215,252), -1, CV_AA);
 
 
     int i;
