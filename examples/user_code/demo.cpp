@@ -848,7 +848,7 @@ int openPoseDemo()
         // const auto imagePaths = op::getFilesOnDirectory(FLAGS_image_dir, op::Extensions::Images);
 
         // test用フィールドの作成
-        int area_resize_rate = 30;
+        int area_resize_rate = 1;
         float input_width, input_depth, input_offset;
         std::cout << "Input Width[m] =";
         std::cin >> input_width;
@@ -856,6 +856,13 @@ int openPoseDemo()
         std::cin >> input_depth;
         std::cout << "Input Offset (outer frame size)[m] =";
         std::cin >> input_offset;
+        while(true){
+            if(((input_width + input_offset) * area_resize_rate > 800) | ((input_depth + input_offset) * area_resize_rate > 800)){
+                area_resize_rate = area_resize_rate - 1;
+                break;
+            }
+            area_resize_rate = area_resize_rate + 1;
+        }
 
 		int mark_area_x = int(area_resize_rate * input_width);
 		int mark_area_y = int(area_resize_rate * input_depth);

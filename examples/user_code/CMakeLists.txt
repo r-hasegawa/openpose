@@ -7,7 +7,8 @@ set(USER_CODE_FILES
     eval_A.cpp
     eval_B.cpp
     demo.cpp
-    demo2.cpp)
+    demo2.cpp
+    chocolate.cpp)
 
 foreach(USER_CODE_FILE ${USER_CODE_FILES})
 
